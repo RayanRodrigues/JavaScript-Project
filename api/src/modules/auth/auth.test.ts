@@ -304,7 +304,10 @@ describe('auth routes', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
-      message: 'Unauthorized',
+      error: {
+        code: 'unauthorized',
+        message: 'Unauthorized',
+      },
     });
 
     await app.close();
@@ -324,7 +327,10 @@ describe('auth routes', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
-      message: 'Unauthorized',
+      error: {
+        code: 'unauthorized',
+        message: 'Unauthorized',
+      },
     });
 
     await app.close();
@@ -347,7 +353,10 @@ describe('auth routes', () => {
 
     expect(response.statusCode).toBe(409);
     expect(response.json()).toEqual({
-      message: 'Email is already in use',
+      error: {
+        code: 'auth_error',
+        message: 'Email is already in use',
+      },
     });
 
     await app.close();
@@ -375,7 +384,70 @@ describe('auth routes', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
-      message: 'Invalid email or password',
+      error: {
+        code: 'auth_error',
+        message: 'Invalid email or password',
+      },
+    });
+
+    await app.close();
+  });
+
+  it('returns 400 for unexpected auth payload fields', async () => {
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email: 'student@example.com',
+        password: 'password123',
+        role: 'admin',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('invalid_request');
+    expect(response.json().error.message).toBe('Invalid request data');
+    expect(response.json().error.issues).toBeTruthy();
+    
+    await app.close();
+  });
+
+  it('returns 400 for invalid register payload', async () => {
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email: 'not-an-email',
+        password: '123',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('invalid_request');
+    expect(response.json().error.message).toBe('Invalid request data');
+    expect(response.json().error.issues).toBeTruthy();
+
+    await app.close();
+  });
+
+  it('rejects malformed authorization headers', async () => {
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/auth/me',
+      headers: {
+        authorization: 'Bearer invalid extra',
+      },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'unauthorized',
+        message: 'Unauthorized',
+      },
     });
 
     await app.close();

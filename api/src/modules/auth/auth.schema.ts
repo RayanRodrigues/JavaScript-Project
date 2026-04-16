@@ -19,7 +19,7 @@ export const authMeResponseSchema = z.object({
 export const authCredentialsBodySchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(6).max(128),
-});
+}).strict();
 
 export const authRegisterResponseSchema = z.object({
   user: authenticatedUserSchema,

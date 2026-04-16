@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { requireAuth } from '../../middleware/auth.middleware.js';
+import { sendError } from '../../lib/http-errors.js';
 import { ZodError } from 'zod';
 import {
   authCredentialsBodySchema,
@@ -17,23 +18,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return authRegisterResponseSchema.parse(await registerUser(body));
     } catch (error) {
       if (error instanceof ZodError) {
-        return reply.status(400).send({
-          message: 'Invalid request data',
-          issues: error.issues,
-        });
+        return sendError(reply, 400, 'invalid_request', 'Invalid request data', error.issues);
       }
 
       if (error instanceof AuthError) {
-        return reply.status(error.statusCode).send({
-          message: error.message,
-        });
+        return sendError(reply, error.statusCode, 'auth_error', error.message);
       }
 
       app.log.error(error);
 
-      return reply.status(500).send({
-        message: 'Internal server error',
-      });
+      return sendError(reply, 500, 'internal_error', 'Internal server error');
     }
   });
 
@@ -44,23 +38,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return authLoginResponseSchema.parse(await loginUser(body));
     } catch (error) {
       if (error instanceof ZodError) {
-        return reply.status(400).send({
-          message: 'Invalid request data',
-          issues: error.issues,
-        });
+        return sendError(reply, 400, 'invalid_request', 'Invalid request data', error.issues);
       }
 
       if (error instanceof AuthError) {
-        return reply.status(error.statusCode).send({
-          message: error.message,
-        });
+        return sendError(reply, error.statusCode, 'auth_error', error.message);
       }
 
       app.log.error(error);
 
-      return reply.status(500).send({
-        message: 'Internal server error',
-      });
+      return sendError(reply, 500, 'internal_error', 'Internal server error');
     }
   });
 
