@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { registerAuthRoutes } from '../modules/auth/auth.routes.js';
+import { registerDashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
 import { registerTaskRoutes } from '../modules/tasks/tasks.routes.js';
 
 export async function buildApp() {
@@ -25,6 +26,7 @@ export async function buildApp() {
 
   app.get('/health', async () => ({ status: 'ok' }));
   await registerAuthRoutes(app);
+  await registerDashboardRoutes(app);
   await registerTaskRoutes(app);
 
   return app;
