@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
+import { sendError } from '../../lib/http-errors.js';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import {
   createTaskBodySchema,
@@ -16,23 +17,16 @@ import {
 
 function sendValidationError(app: FastifyInstance, reply: FastifyReply, error: unknown) {
   if (error instanceof ZodError) {
-    return reply.status(400).send({
-      message: 'Invalid request data',
-      issues: error.issues,
-    });
+    return sendError(reply, 400, 'invalid_request', 'Invalid request data', error.issues);
   }
 
   if (error instanceof TaskNotFoundError) {
-    return reply.status(404).send({
-      message: 'Task not found',
-    });
+    return sendError(reply, 404, 'task_not_found', 'Task not found');
   }
 
   app.log.error(error);
 
-  return reply.status(500).send({
-    message: 'Internal server error',
-  });
+  return sendError(reply, 500, 'internal_error', 'Internal server error');
 }
 
 export async function registerTaskRoutes(app: FastifyInstance) {

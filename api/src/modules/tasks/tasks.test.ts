@@ -249,7 +249,10 @@ describe('tasks routes', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
-      message: 'Unauthorized',
+      error: {
+        code: 'unauthorized',
+        message: 'Unauthorized',
+      },
     });
 
     await app.close();
@@ -278,7 +281,6 @@ describe('tasks routes', () => {
         subject: 'Biology',
         dueDate: '2026-04-20',
         priority: 'medium',
-        userId: 'forged-user',
       },
     });
 
@@ -398,7 +400,81 @@ describe('tasks routes', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json().message).toBe('Invalid request data');
+    expect(response.json().error.code).toBe('invalid_request');
+    expect(response.json().error.message).toBe('Invalid request data');
+    expect(response.json().error.issues).toBeTruthy();
+
+    await app.close();
+  });
+
+  it('returns 400 for invalid dueDate format', async () => {
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/tasks',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+      payload: {
+        title: 'Biology Flashcards',
+        dueDate: '20/04/2026',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('invalid_request');
+
+    await app.close();
+  });
+
+  it('returns 400 for unexpected task payload fields', async () => {
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/tasks',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+      payload: {
+        title: 'Biology Flashcards',
+        userId: 'forged-user',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('invalid_request');
+
+    await app.close();
+  });
+
+  it('returns 400 when update payload is empty', async () => {
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/tasks/task-1',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('invalid_request');
 
     await app.close();
   });
@@ -433,7 +509,10 @@ describe('tasks routes', () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({
-      message: 'Task not found',
+      error: {
+        code: 'task_not_found',
+        message: 'Task not found',
+      },
     });
 
     await app.close();
