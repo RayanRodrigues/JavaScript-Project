@@ -1,10 +1,7 @@
-import PageHeader from '../components/PageHeader'
-import './Pages.css'
+import PageHeader from '../../components/PageHeader'
+import '../../styles/page.css'
 
-// Schedule page component.
-// Displays study sessions and upcoming planned work in a structured layout.
-
-function Schedule() {
+function SchedulePage() {
   return (
     <section className="page">
       <PageHeader
@@ -44,4 +41,4 @@ function Schedule() {
   )
 }
 
-export default Schedule
+export default SchedulePage

@@ -1,5 +1,4 @@
-/* Page-level styling for the Study Planner.
-   Supports a professional UI/UX and responsive page layout. */
+/* Shared page-level layout and content styles. */
 
 .page {
   max-width: 1200px;

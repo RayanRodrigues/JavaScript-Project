@@ -1,10 +1,7 @@
-import PageHeader from '../components/PageHeader'
-import './Pages.css'
+import PageHeader from '../../components/PageHeader'
+import '../../styles/page.css'
 
-// Dashboard page component.
-// Displays study overview information in a clean and professional layout.
-
-function Dashboard() {
+function DashboardPage() {
   return (
     <section className="page">
       <PageHeader
@@ -51,7 +48,7 @@ function Dashboard() {
           <div className="progress-block">
             <p>Weekly Goal</p>
             <div className="progress-bar">
-              <div className="progress-fill" style={{ width: '68%' }}></div>
+              <div className="progress-fill" style={{ width: '68%' }} />
             </div>
             <span>68% completed</span>
           </div>
@@ -61,4 +58,4 @@ function Dashboard() {
   )
 }
 
-export default Dashboard
+export default DashboardPage

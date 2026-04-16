@@ -1,10 +1,7 @@
-import PageHeader from '../components/PageHeader'
-import './Pages.css'
+import PageHeader from '../../components/PageHeader'
+import '../../styles/page.css'
 
-// Progress page component.
-// Displays completion progress and performance tracking in the interface.
-
-function Progress() {
+function ProgressPage() {
   return (
     <section className="page">
       <PageHeader
@@ -18,7 +15,7 @@ function Progress() {
           <div className="progress-block">
             <p>Tasks Completed</p>
             <div className="progress-bar">
-              <div className="progress-fill green-fill" style={{ width: '58%' }}></div>
+              <div className="progress-fill green-fill" style={{ width: '58%' }} />
             </div>
             <span>58% of all tasks completed</span>
           </div>
@@ -46,4 +43,4 @@ function Progress() {
   )
 }
 
-export default Progress
+export default ProgressPage

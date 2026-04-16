@@ -1,11 +1,7 @@
-import PageHeader from '../components/PageHeader'
-import './Pages.css'
+import PageHeader from '../../components/PageHeader'
+import '../../styles/page.css'
 
-// Add Task page component.
-// Provides the user interface for entering study task information.
-// Prepared for future database integration.
-
-function AddTask() {
+function AddTaskPage() {
   return (
     <section className="page">
       <PageHeader
@@ -43,14 +39,20 @@ function AddTask() {
 
           <div className="form-group">
             <label htmlFor="notes">Notes</label>
-            <textarea id="notes" rows={5} placeholder="Add any study notes or reminders"></textarea>
+            <textarea
+              id="notes"
+              rows={5}
+              placeholder="Add any study notes or reminders"
+            />
           </div>
 
-          <button type="submit" className="primary-btn">Save Task</button>
+          <button type="submit" className="primary-btn">
+            Save Task
+          </button>
         </form>
       </div>
     </section>
   )
 }
 
-export default AddTask
+export default AddTaskPage

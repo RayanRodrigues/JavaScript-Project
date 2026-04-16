@@ -1,6 +1,4 @@
-/* Global application styling.
-   Defines the visual theme and overall user experience for the React web app. */
-
+/* Global application styling. */
 
 :root {
   font-family: Inter, Arial, sans-serif;
@@ -33,8 +31,4 @@ input,
 select,
 textarea {
   font: inherit;
-}
-
-.main-content {
-  padding: 2rem;
 }
