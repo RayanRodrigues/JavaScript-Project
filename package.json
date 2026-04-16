@@ -2,12 +2,15 @@
   "name": "javascript-project-workspace",
   "private": true,
   "workspaces": [
-    "web"
+    "web",
+    "api"
   ],
   "scripts": {
     "dev": "npm run dev --workspace web",
-    "build": "npm run build --workspace web",
-    "lint": "npm run lint --workspace web",
-    "preview": "npm run preview --workspace web"
+    "dev:api": "npm run dev --workspace api",
+    "build": "npm run build --workspace web && npm run build --workspace api",
+    "lint": "npm run lint --workspace web && npm run lint --workspace api",
+    "preview": "npm run preview --workspace web",
+    "test:api": "npm run test --workspace api"
   }
 }
