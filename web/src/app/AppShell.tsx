@@ -1,12 +1,11 @@
 import Navbar from '../components/Navbar'
 import { AppRoutes } from '../routes/AppRoutes'
-import './app-shell.css'
 
 function AppShell() {
   return (
-    <div className="app-shell">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-200">
       <Navbar />
-      <main className="app-shell__main">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         <AppRoutes />
       </main>
     </div>
