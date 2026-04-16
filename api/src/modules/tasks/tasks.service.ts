@@ -1,8 +1,10 @@
 import { getFirebaseAdminFirestore } from '../../lib/firebase-admin.js';
 import {
+  listTasksQuerySchema,
   taskListResponseSchema,
   taskResponseSchema,
   type CreateTaskBody,
+  type ListTasksQuery,
   type Task,
   type UpdateTaskBody,
 } from './tasks.schema.js';
@@ -11,6 +13,22 @@ export class TaskNotFoundError extends Error {
   constructor() {
     super('Task not found');
   }
+}
+
+function compareByDueDate(left: Task, right: Task) {
+  if (left.dueDate && right.dueDate) {
+    return left.dueDate.localeCompare(right.dueDate);
+  }
+
+  if (left.dueDate) {
+    return -1;
+  }
+
+  if (right.dueDate) {
+    return 1;
+  }
+
+  return left.title.localeCompare(right.title);
 }
 
 function normalizePriority(value: unknown): Task['priority'] {
@@ -41,13 +59,35 @@ function mapTask(docId: string, userId: string, data: Record<string, unknown>): 
   };
 }
 
-export async function listTasksForUser(userId: string) {
+export async function listTasksForUser(userId: string, query?: Partial<ListTasksQuery>) {
   const snapshot = await getFirebaseAdminFirestore()
     .collection('tasks')
     .where('userId', '==', userId)
     .get();
 
-  const tasks = snapshot.docs.map((doc) => mapTask(doc.id, userId, doc.data()));
+  const filters = listTasksQuerySchema.parse(query ?? {});
+  const normalizedSearch = filters.search?.toLowerCase();
+  const tasks = snapshot.docs
+    .map((doc) => mapTask(doc.id, userId, doc.data()))
+    .filter((task) => {
+      if (filters.status !== 'all' && task.status !== filters.status) {
+        return false;
+      }
+
+      if (filters.priority && task.priority !== filters.priority) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const haystacks = [task.title, task.subject ?? ''];
+
+      return haystacks.some((value) => value.toLowerCase().includes(normalizedSearch));
+    })
+    .sort(compareByDueDate)
+    .slice(0, filters.limit);
 
   return taskListResponseSchema.parse({ tasks });
 }

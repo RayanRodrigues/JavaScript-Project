@@ -4,6 +4,7 @@ import { sendError } from '../../lib/http-errors.js';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import {
   createTaskBodySchema,
+  listTasksQuerySchema,
   updateTaskBodySchema,
   updateTaskParamsSchema,
 } from './tasks.schema.js';
@@ -30,8 +31,14 @@ function sendValidationError(app: FastifyInstance, reply: FastifyReply, error: u
 }
 
 export async function registerTaskRoutes(app: FastifyInstance) {
-  app.get('/tasks', { preHandler: requireAuth }, async (request) => {
-    return listTasksForUser(request.user!.userId);
+  app.get('/tasks', { preHandler: requireAuth }, async (request, reply) => {
+    try {
+      const query = listTasksQuerySchema.parse(request.query);
+
+      return await listTasksForUser(request.user!.userId, query);
+    } catch (error) {
+      return sendValidationError(app, reply, error);
+    }
   });
 
   app.post('/tasks', { preHandler: requireAuth }, async (request, reply) => {

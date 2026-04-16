@@ -31,6 +31,15 @@ export const taskResponseSchema = z.object({
   task: taskSchema,
 });
 
+export const listTasksQuerySchema = z
+  .object({
+    status: z.enum(['pending', 'completed', 'all']).optional().default('pending'),
+    search: z.string().trim().max(120).optional(),
+    priority: prioritySchema.optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+  })
+  .strict();
+
 export const createTaskBodySchema = z
   .object({
     title: z.string().trim().min(1).max(120),
@@ -60,3 +69,4 @@ export const updateTaskBodySchema = z
 export type Task = z.infer<typeof taskSchema>;
 export type CreateTaskBody = z.infer<typeof createTaskBodySchema>;
 export type UpdateTaskBody = z.infer<typeof updateTaskBodySchema>;
+export type ListTasksQuery = z.infer<typeof listTasksQuerySchema>;

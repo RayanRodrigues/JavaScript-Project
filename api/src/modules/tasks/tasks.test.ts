@@ -91,6 +91,132 @@ describe('tasks service', () => {
     expect(where).toHaveBeenCalledWith('userId', '==', 'user-123');
   });
 
+  it('returns pending tasks by default and sorts by dueDate', async () => {
+    const get = vi.fn().mockResolvedValue({
+      docs: [
+        {
+          id: 'task-1',
+          data: () => ({
+            title: 'Later Task',
+            subject: 'Math',
+            dueDate: '2026-04-20',
+            priority: 'high',
+            status: 'pending',
+          }),
+        },
+        {
+          id: 'task-2',
+          data: () => ({
+            title: 'Completed Task',
+            subject: 'Math',
+            dueDate: '2026-04-18',
+            priority: 'medium',
+            status: 'completed',
+          }),
+        },
+        {
+          id: 'task-3',
+          data: () => ({
+            title: 'Earlier Task',
+            subject: 'History',
+            dueDate: '2026-04-17',
+            priority: 'low',
+            status: 'pending',
+          }),
+        },
+      ],
+    });
+    const where = vi.fn(() => ({ get }));
+    const collection = vi.fn(() => ({ where }));
+
+    getFirestore.mockReturnValue({ collection });
+
+    await expect(listTasksForUser('user-123')).resolves.toEqual({
+      tasks: [
+        {
+          id: 'task-3',
+          userId: 'user-123',
+          title: 'Earlier Task',
+          subject: 'History',
+          dueDate: '2026-04-17',
+          priority: 'low',
+          status: 'pending',
+        },
+        {
+          id: 'task-1',
+          userId: 'user-123',
+          title: 'Later Task',
+          subject: 'Math',
+          dueDate: '2026-04-20',
+          priority: 'high',
+          status: 'pending',
+        },
+      ],
+    });
+  });
+
+  it('filters tasks by status, priority, search and limit', async () => {
+    const get = vi.fn().mockResolvedValue({
+      docs: [
+        {
+          id: 'task-1',
+          data: () => ({
+            title: 'Math Quiz Review',
+            subject: 'Math',
+            dueDate: '2026-04-18',
+            priority: 'high',
+            status: 'pending',
+          }),
+        },
+        {
+          id: 'task-2',
+          data: () => ({
+            title: 'Biology Flashcards',
+            subject: 'Biology',
+            dueDate: '2026-04-17',
+            priority: 'high',
+            status: 'pending',
+          }),
+        },
+        {
+          id: 'task-3',
+          data: () => ({
+            title: 'History Essay',
+            subject: 'History',
+            dueDate: '2026-04-19',
+            priority: 'medium',
+            status: 'completed',
+          }),
+        },
+      ],
+    });
+    const where = vi.fn(() => ({ get }));
+    const collection = vi.fn(() => ({ where }));
+
+    getFirestore.mockReturnValue({ collection });
+
+    await expect(
+      listTasksForUser('user-123', {
+        status: 'all',
+        priority: 'high',
+        search: 'bio',
+        limit: 5,
+      }),
+    ).resolves.toEqual({
+      tasks: [
+        {
+          id: 'task-2',
+          userId: 'user-123',
+          title: 'Biology Flashcards',
+          subject: 'Biology',
+          dueDate: '2026-04-17',
+          priority: 'high',
+          status: 'pending',
+        },
+      ],
+    });
+  });
+
   it('creates a task using the authenticated user as source of truth', async () => {
     const set = vi.fn().mockResolvedValue(undefined);
     const docRef = { id: 'task-2', set };
@@ -231,6 +357,128 @@ describe('tasks routes', () => {
           title: 'Math Quiz Review',
           subject: 'Math',
           dueDate: '2026-04-18',
+          priority: 'high',
+          status: 'pending',
+        },
+      ],
+    });
+
+    await app.close();
+  });
+
+  it('returns pending tasks by default from the route', async () => {
+    const get = vi.fn().mockResolvedValue({
+      docs: [
+        {
+          id: 'task-1',
+          data: () => ({
+            title: 'Pending Task',
+            subject: 'Math',
+            dueDate: '2026-04-18',
+            priority: 'high',
+            status: 'pending',
+          }),
+        },
+        {
+          id: 'task-2',
+          data: () => ({
+            title: 'Completed Task',
+            subject: 'Math',
+            dueDate: '2026-04-17',
+            priority: 'medium',
+            status: 'completed',
+          }),
+        },
+      ],
+    });
+    const where = vi.fn(() => ({ get }));
+    const collection = vi.fn(() => ({ where }));
+
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    getFirestore.mockReturnValue({ collection });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/tasks',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      tasks: [
+        {
+          id: 'task-1',
+          userId: 'user-123',
+          title: 'Pending Task',
+          subject: 'Math',
+          dueDate: '2026-04-18',
+          priority: 'high',
+          status: 'pending',
+        },
+      ],
+    });
+
+    await app.close();
+  });
+
+  it('filters tasks through query params', async () => {
+    const get = vi.fn().mockResolvedValue({
+      docs: [
+        {
+          id: 'task-1',
+          data: () => ({
+            title: 'Math Quiz Review',
+            subject: 'Math',
+            dueDate: '2026-04-18',
+            priority: 'high',
+            status: 'pending',
+          }),
+        },
+        {
+          id: 'task-2',
+          data: () => ({
+            title: 'Biology Flashcards',
+            subject: 'Biology',
+            dueDate: '2026-04-17',
+            priority: 'high',
+            status: 'pending',
+          }),
+        },
+      ],
+    });
+    const where = vi.fn(() => ({ get }));
+    const collection = vi.fn(() => ({ where }));
+
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    getFirestore.mockReturnValue({ collection });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/tasks?status=all&priority=high&search=bio&limit=10',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      tasks: [
+        {
+          id: 'task-2',
+          userId: 'user-123',
+          title: 'Biology Flashcards',
+          subject: 'Biology',
+          dueDate: '2026-04-17',
           priority: 'high',
           status: 'pending',
         },
@@ -471,6 +719,27 @@ describe('tasks routes', () => {
         authorization: 'Bearer valid-token',
       },
       payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('invalid_request');
+
+    await app.close();
+  });
+
+  it('returns 400 for invalid task query params', async () => {
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/tasks?limit=0',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
     });
 
     expect(response.statusCode).toBe(400);
