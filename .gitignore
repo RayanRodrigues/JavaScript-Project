@@ -16,7 +16,6 @@ dist-ssr
 # Environment files
 .env
 api/.env
-web/.env
 
 # Editor directories and files
 .vscode/*
@@ -28,5 +27,3 @@ web/.env
 *.njsproj
 *.sln
 *.sw?
-
-messi.json
