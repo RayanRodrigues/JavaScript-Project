@@ -3,6 +3,12 @@
 Hooks handle verification mechanically. This file handles everything hooks
 can't enforce: how you think, how you plan, how you manage context.
 
+`AGENT.md` is the project source of truth for architecture, scope, security,
+testing, file-size limits, API rules, and implementation discipline. Always
+read and verify `AGENT.md` before planning, coding, refactoring, or reviewing.
+If `CLAUDE.md` and `AGENT.md` ever feel misaligned, stop and follow `AGENT.md`
+for project-specific rules.
+
 ---
 
 ## Planning
@@ -29,6 +35,8 @@ can't enforce: how you think, how you plan, how you manage context.
 
 ## Context Management
 
+- Re-check `AGENT.md` before any meaningful implementation or architectural
+  decision. Do not rely on memory for project rules.
 - Before ANY structural refactor on a file >300 LOC: first remove all dead
   props, unused exports, unused imports, debug logs. Commit cleanup
   separately. Dead code burns tokens that trigger compaction faster.
