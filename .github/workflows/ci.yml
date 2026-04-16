@@ -28,14 +28,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --include=optional
 
+      - name: Repair optional native dependencies
+        run: npm install --include=optional
+
       - name: Lint web
         run: npm run lint --workspace web
 
       - name: Lint api
         run: npm run lint --workspace api
-
-      - name: Install rolldown Linux binding
-        run: npm install --no-save @rolldown/binding-linux-x64-gnu@1.0.0-rc.15
 
       - name: Build web
         run: npm run build --workspace web
@@ -59,6 +59,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --include=optional
+
+      - name: Repair optional native dependencies
+        run: npm install --include=optional
 
       - name: Run web tests
         run: npm run test --workspace web
