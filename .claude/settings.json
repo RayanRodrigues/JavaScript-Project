@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-verify.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-verify.sh\"",
             "timeout": 120,
             "statusMessage": "Verifying edit..."
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/truncation-check.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/truncation-check.sh\"",
             "timeout": 5,
             "statusMessage": "Checking for truncation..."
           }
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-verify.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-verify.sh\"",
             "timeout": 300,
             "statusMessage": "Running final verification..."
           }
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-destructive.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/block-destructive.sh\"",
             "timeout": 5,
             "statusMessage": "Checking command safety..."
           }
