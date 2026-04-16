@@ -34,6 +34,9 @@ jobs:
       - name: Lint api
         run: npm run lint --workspace api
 
+      - name: Install rolldown Linux binding
+        run: npm install --no-save @rolldown/binding-linux-x64-gnu@1.0.0-rc.15
+
       - name: Build web
         run: npm run build --workspace web
 
