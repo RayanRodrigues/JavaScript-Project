@@ -1,5 +1,5 @@
-import { getStoredToken } from '../../hooks/useAuth'
-import { buildApiUrl } from '../../lib/api'
+import { apiFetch, buildApiUrl } from '../../lib/api'
+import { getStoredToken } from '../../lib/session'
 
 export type ProgressSubject = {
   subject: string
@@ -18,7 +18,7 @@ export type ProgressOverviewResponse = {
 }
 
 export async function fetchProgressOverview(): Promise<ProgressOverviewResponse> {
-  const res = await fetch(buildApiUrl('/progress/summary'), {
+  const res = await apiFetch(buildApiUrl('/progress/summary'), {
     headers: { Authorization: `Bearer ${getStoredToken()}` },
   })
   if (!res.ok) throw new Error('Failed to load progress data.')

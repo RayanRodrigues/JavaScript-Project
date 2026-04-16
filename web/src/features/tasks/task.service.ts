@@ -1,5 +1,5 @@
-import { getStoredToken } from '../../hooks/useAuth'
-import { buildApiUrl } from '../../lib/api'
+import { apiFetch, buildApiUrl } from '../../lib/api'
+import { getStoredToken } from '../../lib/session'
 import type { Task, TaskFormValues, ListTasksParams } from './task.types'
 
 function authHeaders() {
@@ -16,7 +16,7 @@ export async function listTasks(params: ListTasksParams = {}): Promise<Task[]> {
   if (params.priority) query.set('priority', params.priority)
   if (params.limit !== undefined) query.set('limit', String(params.limit))
 
-  const res = await fetch(`${buildApiUrl('/tasks')}?${query}`, {
+  const res = await apiFetch(`${buildApiUrl('/tasks')}?${query}`, {
     headers: authHeaders(),
   })
   if (!res.ok) throw new Error('Failed to load tasks.')
@@ -25,7 +25,7 @@ export async function listTasks(params: ListTasksParams = {}): Promise<Task[]> {
 }
 
 export async function createTask(values: TaskFormValues): Promise<Task> {
-  const res = await fetch(buildApiUrl('/tasks'), {
+  const res = await apiFetch(buildApiUrl('/tasks'), {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({
@@ -41,7 +41,7 @@ export async function createTask(values: TaskFormValues): Promise<Task> {
 }
 
 export async function updateTask(taskId: string, values: TaskFormValues): Promise<Task> {
-  const res = await fetch(buildApiUrl(`/tasks/${taskId}`), {
+  const res = await apiFetch(buildApiUrl(`/tasks/${taskId}`), {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify({
@@ -57,7 +57,7 @@ export async function updateTask(taskId: string, values: TaskFormValues): Promis
 }
 
 export async function toggleTaskCompletion(taskId: string, completed: boolean): Promise<Task> {
-  const res = await fetch(buildApiUrl(`/tasks/${taskId}`), {
+  const res = await apiFetch(buildApiUrl(`/tasks/${taskId}`), {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify({ status: completed ? 'completed' : 'pending' }),
@@ -68,7 +68,7 @@ export async function toggleTaskCompletion(taskId: string, completed: boolean): 
 }
 
 export async function removeTask(taskId: string): Promise<void> {
-  const res = await fetch(buildApiUrl(`/tasks/${taskId}`), {
+  const res = await apiFetch(buildApiUrl(`/tasks/${taskId}`), {
     method: 'DELETE',
     headers: authHeaders(),
   })

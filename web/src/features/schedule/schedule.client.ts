@@ -1,5 +1,5 @@
-import { getStoredToken } from '../../hooks/useAuth'
-import { buildApiUrl } from '../../lib/api'
+import { apiFetch, buildApiUrl } from '../../lib/api'
+import { getStoredToken } from '../../lib/session'
 
 export type ScheduleTask = {
   id: string
@@ -21,7 +21,7 @@ export type ScheduleSummaryResponse = {
 }
 
 export async function fetchScheduleSummary(): Promise<ScheduleSummaryResponse> {
-  const res = await fetch(buildApiUrl('/schedule/summary'), {
+  const res = await apiFetch(buildApiUrl('/schedule/summary'), {
     headers: { Authorization: `Bearer ${getStoredToken()}` },
   })
   if (!res.ok) throw new Error('Failed to load schedule data.')

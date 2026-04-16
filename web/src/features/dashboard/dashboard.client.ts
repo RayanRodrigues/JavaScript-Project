@@ -1,5 +1,5 @@
-import { getStoredToken } from '../../hooks/useAuth'
-import { buildApiUrl } from '../../lib/api'
+import { apiFetch, buildApiUrl } from '../../lib/api'
+import { getStoredToken } from '../../lib/session'
 
 export type DashboardDeadline = {
   id: string
@@ -20,7 +20,7 @@ export type DashboardSummary = {
 }
 
 export async function fetchDashboardSummary(): Promise<DashboardSummary> {
-  const res = await fetch(buildApiUrl('/dashboard/summary'), {
+  const res = await apiFetch(buildApiUrl('/dashboard/summary'), {
     headers: { Authorization: `Bearer ${getStoredToken()}` },
   })
   if (!res.ok) throw new Error('Failed to load dashboard data.')

@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
 
-const originalNodeEnv = process.env.NODE_ENV;
+const originalEnv = process.env.ENV;
 
 afterEach(() => {
-  process.env.NODE_ENV = originalNodeEnv;
+  process.env.ENV = originalEnv;
 });
 
 describe('app swagger docs', () => {
   it('serves the API under the /api prefix', async () => {
-    process.env.NODE_ENV = 'test';
+    process.env.ENV = 'test';
 
     const app = await buildApp();
     const response = await app.inject({
@@ -24,7 +24,7 @@ describe('app swagger docs', () => {
   });
 
   it('exposes swagger outside production', async () => {
-    process.env.NODE_ENV = 'test';
+    process.env.ENV = 'test';
 
     const app = await buildApp();
     const response = await app.inject({
@@ -41,7 +41,7 @@ describe('app swagger docs', () => {
   });
 
   it('does not expose swagger in production', async () => {
-    process.env.NODE_ENV = 'production';
+    process.env.ENV = 'production';
 
     const app = await buildApp();
     const response = await app.inject({
@@ -55,7 +55,7 @@ describe('app swagger docs', () => {
   });
 
   it('allows swagger ui assets in non-production CSP', async () => {
-    process.env.NODE_ENV = 'test';
+    process.env.ENV = 'test';
 
     const app = await buildApp();
     const response = await app.inject({
@@ -68,5 +68,11 @@ describe('app swagger docs', () => {
     expect(response.headers['content-security-policy']).toContain("style-src 'self' 'unsafe-inline'");
 
     await app.close();
+  });
+
+  it('throws when ENV is missing', async () => {
+    delete process.env.ENV;
+
+    await expect(buildApp()).rejects.toThrow('ENV must be set to development, test, or production');
   });
 });

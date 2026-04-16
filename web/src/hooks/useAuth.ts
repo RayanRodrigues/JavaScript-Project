@@ -1,42 +1,31 @@
 import { useState } from 'react'
-import { buildApiUrl } from '../lib/api'
+import { apiFetch, buildApiUrl } from '../lib/api'
+import {
+  clearStoredSession,
+  getStoredToken,
+  readStoredUser,
+  storeSession,
+  type AuthSession,
+  type UserSession,
+} from '../lib/session'
 
-export type User = { userId: string; email: string | null }
-type Session = { idToken: string; refreshToken: string; expiresIn: string }
+export type User = UserSession
+type Session = AuthSession
 type AuthResult = { success: true } | { success: false; error: string }
 
-const USER_KEY = 'auth_user'
-const TOKEN_KEY = 'auth_token'
-function readUser(): User | null {
-  try {
-    return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null')
-  } catch {
-    return null
-  }
-}
-
-function storeSession(user: User, session: Session): void {
-  localStorage.setItem(USER_KEY, JSON.stringify(user))
-  localStorage.setItem(TOKEN_KEY, session.idToken)
-}
-
-export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
-}
-
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(readUser)
+  const [user, setUser] = useState<User | null>(readStoredUser)
 
   async function login(email: string, password: string): Promise<AuthResult> {
     try {
-      const res = await fetch(buildApiUrl('/auth/login'), {
+      const res = await apiFetch(buildApiUrl('/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-      })
+      }, { redirectOnUnauthorized: false })
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { message?: string }
-        return { success: false, error: body.message ?? 'Login failed.' }
+        const body = await res.json().catch(() => ({})) as { error?: { message?: string }; message?: string }
+        return { success: false, error: body.error?.message ?? body.message ?? 'Login failed.' }
       }
       const { user: u, session } = await res.json() as { user: User; session: Session }
       storeSession(u, session)
@@ -49,14 +38,14 @@ export function useAuth() {
 
   async function signup(email: string, password: string): Promise<AuthResult> {
     try {
-      const res = await fetch(buildApiUrl('/auth/register'), {
+      const res = await apiFetch(buildApiUrl('/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-      })
+      }, { redirectOnUnauthorized: false })
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { message?: string }
-        return { success: false, error: body.message ?? 'Registration failed.' }
+        const body = await res.json().catch(() => ({})) as { error?: { message?: string }; message?: string }
+        return { success: false, error: body.error?.message ?? body.message ?? 'Registration failed.' }
       }
       const { user: u, session } = await res.json() as { user: User; session: Session }
       storeSession(u, session)
@@ -68,8 +57,7 @@ export function useAuth() {
   }
 
   function logout(): void {
-    localStorage.removeItem(USER_KEY)
-    localStorage.removeItem(TOKEN_KEY)
+    clearStoredSession()
     setUser(null)
   }
 
