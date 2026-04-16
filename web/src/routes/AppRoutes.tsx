@@ -9,7 +9,8 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/add-task" element={<AddTaskPage />} />
+      <Route path="/tasks" element={<AddTaskPage />} />
+      <Route path="/add-task" element={<Navigate to="/tasks" replace />} />
       <Route path="/schedule" element={<SchedulePage />} />
       <Route path="/progress" element={<ProgressPage />} />
     </Routes>

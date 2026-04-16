@@ -26,7 +26,7 @@ describe('Navbar', () => {
   it('renders all four nav links', () => {
     renderNavbar()
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Add Task' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Tasks' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Schedule' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Progress' })).toBeInTheDocument()
   })

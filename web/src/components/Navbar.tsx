@@ -3,7 +3,7 @@ import { ThemeToggle } from './ThemeToggle'
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/add-task', label: 'Add Task' },
+  { to: '/tasks', label: 'Tasks' },
   { to: '/schedule', label: 'Schedule' },
   { to: '/progress', label: 'Progress' },
 ]
