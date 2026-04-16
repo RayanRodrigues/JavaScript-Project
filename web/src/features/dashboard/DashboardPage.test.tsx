@@ -1,7 +1,25 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import DashboardPage from './DashboardPage'
+import * as dashboardClient from './dashboard.client'
+
+vi.mock('./dashboard.client', () => ({
+  fetchDashboardSummary: vi.fn(),
+}))
+
+const fakeSummary = {
+  summary: {
+    totalTasks: 10,
+    completedTasks: 6,
+    pendingTasks: 4,
+    highPriorityTasks: 2,
+  },
+  upcomingDeadlines: [
+    { id: 'd1', title: 'Math Quiz Review', dueDate: '2026-04-18', priority: 'high' as const, status: 'pending' as const },
+    { id: 'd2', title: 'History Essay', dueDate: '2026-04-20', priority: 'medium' as const, status: 'pending' as const },
+  ],
+}
 
 function renderPage() {
   return render(
@@ -11,45 +29,76 @@ function renderPage() {
   )
 }
 
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
 describe('DashboardPage', () => {
-  it('renders the page title', () => {
+  it('renders the page title', async () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockResolvedValue(fakeSummary)
     renderPage()
     expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
   })
 
-  it('renders all three stat values', () => {
+  it('renders skeleton cards while loading', () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockImplementation(() => new Promise(() => {}))
     renderPage()
-    expect(screen.getByText('12')).toBeInTheDocument()
-    expect(screen.getByText('7')).toBeInTheDocument()
-    expect(screen.getByText('5')).toBeInTheDocument()
+    const skeletons = document.querySelectorAll('.animate-pulse')
+    expect(skeletons.length).toBeGreaterThan(0)
   })
 
-  it('renders all three stat labels', () => {
+  it('renders all four stat cards after load', async () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockResolvedValue(fakeSummary)
     renderPage()
-    expect(screen.getByText('Total Tasks')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Total Tasks')).toBeInTheDocument())
     expect(screen.getByText('Completed')).toBeInTheDocument()
     expect(screen.getByText('Pending')).toBeInTheDocument()
+    expect(screen.getByText('High Priority')).toBeInTheDocument()
   })
 
-  it('renders the Upcoming Deadlines section heading', () => {
+  it('renders the correct stat values from the API', async () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockResolvedValue(fakeSummary)
     renderPage()
-    expect(screen.getByText('Upcoming Deadlines')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('10')).toBeInTheDocument())
+    expect(screen.getByText('6')).toBeInTheDocument()
+    expect(screen.getByText('4')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
   })
 
-  it('renders all three deadline items', () => {
+  it('renders the Upcoming Deadlines section', async () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockResolvedValue(fakeSummary)
     renderPage()
-    expect(screen.getByText('Math Quiz Review')).toBeInTheDocument()
-    expect(screen.getByText('History Essay Outline')).toBeInTheDocument()
-    expect(screen.getByText('Biology Flashcards')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Upcoming Deadlines')).toBeInTheDocument())
   })
 
-  it('renders the Study Focus section heading', () => {
+  it('renders deadline titles from the API', async () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockResolvedValue(fakeSummary)
     renderPage()
-    expect(screen.getByText('Study Focus')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Math Quiz Review')).toBeInTheDocument())
+    expect(screen.getByText('History Essay')).toBeInTheDocument()
   })
 
-  it('renders the progress meter with correct value text', () => {
+  it('renders the Completion Rate section with calculated percentage', async () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockResolvedValue(fakeSummary)
     renderPage()
-    expect(screen.getByText('68% completed')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Completion Rate')).toBeInTheDocument())
+    expect(screen.getByText('60% completed')).toBeInTheDocument()
+  })
+
+  it('shows an empty deadlines message when there are none', async () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockResolvedValue({
+      ...fakeSummary,
+      upcomingDeadlines: [],
+    })
+    renderPage()
+    await waitFor(() => expect(screen.getByText('No upcoming deadlines.')).toBeInTheDocument())
+  })
+
+  it('shows an error banner when the fetch fails', async () => {
+    vi.mocked(dashboardClient.fetchDashboardSummary).mockRejectedValue(new Error('Network error'))
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getByText(/unable to load dashboard data/i)).toBeInTheDocument(),
+    )
   })
 })

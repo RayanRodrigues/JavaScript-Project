@@ -2,7 +2,10 @@ import { listTasksForUser } from '../tasks/tasks.service.js';
 import { dashboardSummaryResponseSchema } from './dashboard.schema.js';
 
 export async function getDashboardSummary(userId: string) {
-  const { tasks } = await listTasksForUser(userId);
+  const { tasks } = await listTasksForUser(userId, {
+    status: 'all',
+    limit: 100,
+  });
 
   const completedTasks = tasks.filter((task) => task.status === 'completed').length;
   const pendingTasks = tasks.filter((task) => task.status === 'pending').length;
