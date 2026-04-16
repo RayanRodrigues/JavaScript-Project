@@ -156,7 +156,7 @@ describe('progress routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/progress/summary',
+      url: '/api/progress/summary',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -186,7 +186,7 @@ describe('progress routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/progress/summary',
+      url: '/api/progress/summary',
     });
 
     expect(response.statusCode).toBe(401);

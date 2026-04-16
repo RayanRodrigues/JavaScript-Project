@@ -162,7 +162,7 @@ describe('schedule routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/schedule/summary',
+      url: '/api/schedule/summary',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -195,7 +195,7 @@ describe('schedule routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/schedule/summary',
+      url: '/api/schedule/summary',
     });
 
     expect(response.statusCode).toBe(401);

@@ -159,7 +159,7 @@ describe('dashboard routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/dashboard/summary',
+      url: '/api/dashboard/summary',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -191,7 +191,7 @@ describe('dashboard routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/dashboard/summary',
+      url: '/api/dashboard/summary',
     });
 
     expect(response.statusCode).toBe(401);

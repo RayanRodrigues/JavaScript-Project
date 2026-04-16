@@ -8,6 +8,21 @@ afterEach(() => {
 });
 
 describe('app swagger docs', () => {
+  it('serves the API under the /api prefix', async () => {
+    process.env.NODE_ENV = 'test';
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/health',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ status: 'ok' });
+
+    await app.close();
+  });
+
   it('exposes swagger outside production', async () => {
     process.env.NODE_ENV = 'test';
 
@@ -19,6 +34,8 @@ describe('app swagger docs', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json().openapi).toBe('3.0.3');
+    expect(response.json().paths['/api/health']).toBeTruthy();
+    expect(response.json().paths['/api/auth/login']).toBeTruthy();
 
     await app.close();
   });

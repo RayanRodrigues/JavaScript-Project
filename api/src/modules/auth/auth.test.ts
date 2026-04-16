@@ -207,7 +207,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/auth/register',
+      url: '/api/auth/register',
       payload: {
         email: 'student@example.com',
         password: 'password123',
@@ -245,7 +245,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/auth/login',
+      url: '/api/auth/login',
       payload: {
         email: 'student@example.com',
         password: 'password123',
@@ -277,7 +277,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/auth/me',
+      url: '/api/auth/me',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -299,7 +299,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/auth/me',
+      url: '/api/auth/me',
     });
 
     expect(response.statusCode).toBe(401);
@@ -319,7 +319,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/auth/me',
+      url: '/api/auth/me',
       headers: {
         authorization: 'Bearer invalid-token',
       },
@@ -344,7 +344,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/auth/register',
+      url: '/api/auth/register',
       payload: {
         email: 'student@example.com',
         password: 'password123',
@@ -375,7 +375,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/auth/login',
+      url: '/api/auth/login',
       payload: {
         email: 'student@example.com',
         password: 'wrongpass',
@@ -397,7 +397,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/auth/login',
+      url: '/api/auth/login',
       payload: {
         email: 'student@example.com',
         password: 'password123',
@@ -417,7 +417,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/auth/register',
+      url: '/api/auth/register',
       payload: {
         email: 'not-an-email',
         password: '123',
@@ -436,7 +436,7 @@ describe('auth routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/auth/me',
+      url: '/api/auth/me',
       headers: {
         authorization: 'Bearer invalid extra',
       },

@@ -342,7 +342,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/tasks',
+      url: '/api/tasks',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -403,7 +403,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/tasks',
+      url: '/api/tasks',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -464,7 +464,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/tasks?status=all&priority=high&search=bio&limit=10',
+      url: '/api/tasks?status=all&priority=high&search=bio&limit=10',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -492,7 +492,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/tasks',
+      url: '/api/tasks',
     });
 
     expect(response.statusCode).toBe(401);
@@ -520,7 +520,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/tasks',
+      url: '/api/tasks',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -573,7 +573,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'PATCH',
-      url: '/tasks/task-1',
+      url: '/api/tasks/task-1',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -618,7 +618,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'DELETE',
-      url: '/tasks/task-1',
+      url: '/api/tasks/task-1',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -638,7 +638,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/tasks',
+      url: '/api/tasks',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -664,7 +664,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/tasks',
+      url: '/api/tasks',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -689,7 +689,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
-      url: '/tasks',
+      url: '/api/tasks',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -714,7 +714,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'PATCH',
-      url: '/tasks/task-1',
+      url: '/api/tasks/task-1',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -736,7 +736,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
-      url: '/tasks?limit=0',
+      url: '/api/tasks?limit=0',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -767,7 +767,7 @@ describe('tasks routes', () => {
     const app = await buildApp();
     const response = await app.inject({
       method: 'PATCH',
-      url: '/tasks/task-1',
+      url: '/api/tasks/task-1',
       headers: {
         authorization: 'Bearer valid-token',
       },

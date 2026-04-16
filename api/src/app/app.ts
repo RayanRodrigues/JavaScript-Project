@@ -9,6 +9,8 @@ import { registerProgressRoutes } from '../modules/progress/progress.routes.js';
 import { registerScheduleRoutes } from '../modules/schedule/schedule.routes.js';
 import { registerTaskRoutes } from '../modules/tasks/tasks.routes.js';
 
+const API_PREFIX = '/api';
+
 export async function buildApp() {
   const app = Fastify({
     logger: { level: 'warn' },
@@ -33,27 +35,30 @@ export async function buildApp() {
 
   await registerSwaggerDocs(app);
 
-  app.get('/health', {
-    schema: {
-      tags: ['System'],
-      summary: 'Check API availability',
-      response: {
-        200: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['status'],
-          properties: {
-            status: { type: 'string', enum: ['ok'] },
+  await app.register(async (api) => {
+    api.get('/health', {
+      schema: {
+        tags: ['System'],
+        summary: 'Check API availability',
+        response: {
+          200: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['status'],
+            properties: {
+              status: { type: 'string', enum: ['ok'] },
+            },
           },
         },
       },
-    },
-  }, async () => ({ status: 'ok' }));
-  await registerAuthRoutes(app);
-  await registerDashboardRoutes(app);
-  await registerProgressRoutes(app);
-  await registerScheduleRoutes(app);
-  await registerTaskRoutes(app);
+    }, async () => ({ status: 'ok' }));
+
+    await registerAuthRoutes(api);
+    await registerDashboardRoutes(api);
+    await registerProgressRoutes(api);
+    await registerScheduleRoutes(api);
+    await registerTaskRoutes(api);
+  }, { prefix: API_PREFIX });
 
   return app;
 }
