@@ -1,13 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../app/app.js';
-import { verifyAuthToken } from './auth.service.js';
+import { loginUser, registerUser, verifyAuthToken } from './auth.service.js';
 
-const { verifyIdToken, getAuth, getApps, initializeApp, cert } = vi.hoisted(() => ({
+const {
+  verifyIdToken,
+  createUser,
+  getAuth,
+  getApps,
+  initializeApp,
+  cert,
+  getFirestore,
+} = vi.hoisted(() => ({
   verifyIdToken: vi.fn(),
+  createUser: vi.fn(),
   getAuth: vi.fn(),
   getApps: vi.fn(),
   initializeApp: vi.fn(),
   cert: vi.fn(),
+  getFirestore: vi.fn(),
 }));
 
 vi.mock('firebase-admin/app', () => ({
@@ -18,6 +28,10 @@ vi.mock('firebase-admin/app', () => ({
 
 vi.mock('firebase-admin/auth', () => ({
   getAuth,
+}));
+
+vi.mock('firebase-admin/firestore', () => ({
+  getFirestore,
 }));
 
 describe('auth service', () => {
@@ -31,11 +45,22 @@ describe('auth service', () => {
     getApps.mockReturnValue([{ name: '[DEFAULT]' }]);
     getAuth.mockReturnValue({
       verifyIdToken,
+      createUser,
     });
+    getFirestore.mockReturnValue({
+      collection: vi.fn(() => ({
+        doc: vi.fn(() => ({
+          set: vi.fn().mockResolvedValue(undefined),
+        })),
+      })),
+    });
+    process.env.FIREBASE_WEB_API_KEY = 'web-api-key';
+    vi.stubGlobal('fetch', vi.fn());
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('verifies the Firebase token and maps the authenticated user', async () => {
@@ -51,6 +76,82 @@ describe('auth service', () => {
 
     expect(verifyIdToken).toHaveBeenCalledWith('valid-token');
   });
+
+  it('registers a user and returns a signed-in session', async () => {
+    const set = vi.fn().mockResolvedValue(undefined);
+    const doc = vi.fn(() => ({ set }));
+    const collection = vi.fn(() => ({ doc }));
+
+    createUser.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    getFirestore.mockReturnValue({ collection });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        localId: 'user-123',
+        email: 'student@example.com',
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '3600',
+      }),
+    } as Response);
+
+    await expect(
+      registerUser({
+        email: 'student@example.com',
+        password: 'password123',
+      }),
+    ).resolves.toEqual({
+      user: {
+        userId: 'user-123',
+        email: 'student@example.com',
+      },
+      session: {
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '3600',
+      },
+    });
+
+    expect(collection).toHaveBeenCalledWith('users');
+    expect(doc).toHaveBeenCalledWith('user-123');
+    expect(set).toHaveBeenCalledWith({
+      email: 'student@example.com',
+      createdAt: expect.any(String),
+    });
+  });
+
+  it('logs in a user through Firebase Identity Toolkit', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        localId: 'user-123',
+        email: 'student@example.com',
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '3600',
+      }),
+    } as Response);
+
+    await expect(
+      loginUser({
+        email: 'student@example.com',
+        password: 'password123',
+      }),
+    ).resolves.toEqual({
+      user: {
+        userId: 'user-123',
+        email: 'student@example.com',
+      },
+      session: {
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '3600',
+      },
+    });
+  });
 });
 
 describe('auth routes', () => {
@@ -64,11 +165,107 @@ describe('auth routes', () => {
     getApps.mockReturnValue([{ name: '[DEFAULT]' }]);
     getAuth.mockReturnValue({
       verifyIdToken,
+      createUser,
     });
+    getFirestore.mockReturnValue({
+      collection: vi.fn(() => ({
+        doc: vi.fn(() => ({
+          set: vi.fn().mockResolvedValue(undefined),
+        })),
+      })),
+    });
+    process.env.FIREBASE_WEB_API_KEY = 'web-api-key';
+    vi.stubGlobal('fetch', vi.fn());
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('registers a user and returns the session payload', async () => {
+    const set = vi.fn().mockResolvedValue(undefined);
+    const doc = vi.fn(() => ({ set }));
+    const collection = vi.fn(() => ({ doc }));
+
+    createUser.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    getFirestore.mockReturnValue({ collection });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        localId: 'user-123',
+        email: 'student@example.com',
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '3600',
+      }),
+    } as Response);
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email: 'student@example.com',
+        password: 'password123',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      user: {
+        userId: 'user-123',
+        email: 'student@example.com',
+      },
+      session: {
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '3600',
+      },
+    });
+
+    await app.close();
+  });
+
+  it('logs in a user and returns the session payload', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        localId: 'user-123',
+        email: 'student@example.com',
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '3600',
+      }),
+    } as Response);
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email: 'student@example.com',
+        password: 'password123',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      user: {
+        userId: 'user-123',
+        email: 'student@example.com',
+      },
+      session: {
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: '3600',
+      },
+    });
+
+    await app.close();
   });
 
   it('returns the authenticated user for a valid bearer token', async () => {
@@ -128,6 +325,57 @@ describe('auth routes', () => {
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
       message: 'Unauthorized',
+    });
+
+    await app.close();
+  });
+
+  it('returns 409 when trying to register an existing email', async () => {
+    createUser.mockRejectedValue({
+      code: 'auth/email-already-exists',
+    });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email: 'student@example.com',
+        password: 'password123',
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      message: 'Email is already in use',
+    });
+
+    await app.close();
+  });
+
+  it('returns 401 when login credentials are invalid', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      json: async () => ({
+        error: {
+          message: 'INVALID_LOGIN_CREDENTIALS',
+        },
+      }),
+    } as Response);
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email: 'student@example.com',
+        password: 'wrongpass',
+      },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      message: 'Invalid email or password',
     });
 
     await app.close();
