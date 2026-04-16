@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { ThemeToggle } from './ThemeToggle'
+import { useAuth } from '../hooks/useAuth'
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -9,6 +10,14 @@ const NAV_LINKS = [
 ]
 
 function Navbar() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <header className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -47,8 +56,15 @@ function Navbar() {
             ))}
           </nav>
 
-          <div className="ml-2 pl-2 border-l border-slate-200 dark:border-slate-700">
+          <div className="ml-2 pl-2 border-l border-slate-200 dark:border-slate-700 flex items-center gap-1">
             <ThemeToggle />
+            <button
+              onClick={handleLogout}
+              aria-label="Sign out"
+              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100"
+            >
+              Sign out
+            </button>
           </div>
         </div>
 
