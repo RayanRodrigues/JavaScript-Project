@@ -191,7 +191,10 @@ describe('progress routes', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
-      message: 'Unauthorized',
+      error: {
+        code: 'unauthorized',
+        message: 'Unauthorized',
+      },
     });
 
     await app.close();
