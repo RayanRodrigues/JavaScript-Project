@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../app/app.js';
-import { listTasksForUser } from './tasks.service.js';
+import {
+  createTaskForUser,
+  deleteTaskForUser,
+  listTasksForUser,
+  TaskNotFoundError,
+  updateTaskForUser,
+} from './tasks.service.js';
 
 const {
   verifyIdToken,
@@ -84,6 +90,85 @@ describe('tasks service', () => {
     expect(collection).toHaveBeenCalledWith('tasks');
     expect(where).toHaveBeenCalledWith('userId', '==', 'user-123');
   });
+
+  it('creates a task using the authenticated user as source of truth', async () => {
+    const set = vi.fn().mockResolvedValue(undefined);
+    const docRef = { id: 'task-2', set };
+    const doc = vi.fn(() => docRef);
+    const collection = vi.fn(() => ({ doc }));
+
+    getFirestore.mockReturnValue({ collection });
+
+    await expect(
+      createTaskForUser('user-123', {
+        title: 'Biology Flashcards',
+        subject: 'Biology',
+        dueDate: '2026-04-20',
+        priority: 'medium',
+      }),
+    ).resolves.toEqual({
+      task: {
+        id: 'task-2',
+        userId: 'user-123',
+        title: 'Biology Flashcards',
+        subject: 'Biology',
+        dueDate: '2026-04-20',
+        priority: 'medium',
+        status: 'pending',
+      },
+    });
+  });
+
+  it('updates an owned task', async () => {
+    const update = vi.fn().mockResolvedValue(undefined);
+    const get = vi.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({
+        userId: 'user-123',
+        title: 'Math Quiz Review',
+        subject: 'Math',
+        dueDate: '2026-04-18',
+        priority: 'high',
+        status: 'pending',
+      }),
+    });
+    const doc = vi.fn(() => ({ get, update }));
+    const collection = vi.fn(() => ({ doc }));
+
+    getFirestore.mockReturnValue({ collection });
+
+    await expect(
+      updateTaskForUser('user-123', 'task-1', {
+        status: 'completed',
+      }),
+    ).resolves.toEqual({
+      task: {
+        id: 'task-1',
+        userId: 'user-123',
+        title: 'Math Quiz Review',
+        subject: 'Math',
+        dueDate: '2026-04-18',
+        priority: 'high',
+        status: 'completed',
+      },
+    });
+  });
+
+  it('throws when trying to delete a task owned by another user', async () => {
+    const deleteFn = vi.fn().mockResolvedValue(undefined);
+    const get = vi.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({
+        userId: 'other-user',
+      }),
+    });
+    const doc = vi.fn(() => ({ get, delete: deleteFn }));
+    const collection = vi.fn(() => ({ doc }));
+
+    getFirestore.mockReturnValue({ collection });
+
+    await expect(deleteTaskForUser('user-123', 'task-1')).rejects.toBeInstanceOf(TaskNotFoundError);
+  });
 });
 
 describe('tasks routes', () => {
@@ -165,6 +250,190 @@ describe('tasks routes', () => {
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
       message: 'Unauthorized',
+    });
+
+    await app.close();
+  });
+
+  it('creates a task for an authenticated user', async () => {
+    const set = vi.fn().mockResolvedValue(undefined);
+    const doc = vi.fn(() => ({ id: 'task-2', set }));
+    const collection = vi.fn(() => ({ doc }));
+
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    getFirestore.mockReturnValue({ collection });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/tasks',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+      payload: {
+        title: 'Biology Flashcards',
+        subject: 'Biology',
+        dueDate: '2026-04-20',
+        priority: 'medium',
+        userId: 'forged-user',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      task: {
+        id: 'task-2',
+        userId: 'user-123',
+        title: 'Biology Flashcards',
+        subject: 'Biology',
+        dueDate: '2026-04-20',
+        priority: 'medium',
+        status: 'pending',
+      },
+    });
+
+    await app.close();
+  });
+
+  it('updates an authenticated user task', async () => {
+    const update = vi.fn().mockResolvedValue(undefined);
+    const get = vi.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({
+        userId: 'user-123',
+        title: 'Math Quiz Review',
+        subject: 'Math',
+        dueDate: '2026-04-18',
+        priority: 'high',
+        status: 'pending',
+      }),
+    });
+    const doc = vi.fn(() => ({ get, update }));
+    const collection = vi.fn(() => ({ doc }));
+
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    getFirestore.mockReturnValue({ collection });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/tasks/task-1',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+      payload: {
+        status: 'completed',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      task: {
+        id: 'task-1',
+        userId: 'user-123',
+        title: 'Math Quiz Review',
+        subject: 'Math',
+        dueDate: '2026-04-18',
+        priority: 'high',
+        status: 'completed',
+      },
+    });
+
+    await app.close();
+  });
+
+  it('deletes an authenticated user task', async () => {
+    const deleteFn = vi.fn().mockResolvedValue(undefined);
+    const get = vi.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({
+        userId: 'user-123',
+      }),
+    });
+    const doc = vi.fn(() => ({ get, delete: deleteFn }));
+    const collection = vi.fn(() => ({ doc }));
+
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    getFirestore.mockReturnValue({ collection });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'DELETE',
+      url: '/tasks/task-1',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+
+    await app.close();
+  });
+
+  it('returns 400 for invalid task creation payload', async () => {
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/tasks',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+      payload: {
+        title: '',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().message).toBe('Invalid request data');
+
+    await app.close();
+  });
+
+  it('returns 404 when updating a task from another user', async () => {
+    const get = vi.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({
+        userId: 'other-user',
+      }),
+    });
+    const doc = vi.fn(() => ({ get, update: vi.fn() }));
+    const collection = vi.fn(() => ({ doc }));
+
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    getFirestore.mockReturnValue({ collection });
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/tasks/task-1',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+      payload: {
+        status: 'completed',
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      message: 'Task not found',
     });
 
     await app.close();
