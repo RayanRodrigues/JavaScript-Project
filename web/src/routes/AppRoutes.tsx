@@ -8,6 +8,7 @@ import DashboardPage from '../features/dashboard/DashboardPage'
 import ProfilePage from '../features/auth/ProfilePage'
 import ProgressPage from '../features/progress/ProgressPage'
 import SchedulePage from '../features/schedule/SchedulePage'
+import NotFoundPage from '../features/not-found/NotFoundPage'
 
 function AuthenticatedApp() {
   const { user } = useAuth()
@@ -22,6 +23,7 @@ function AuthenticatedApp() {
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AppShell>
   )
