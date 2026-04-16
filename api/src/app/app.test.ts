@@ -66,6 +66,28 @@ describe('app swagger docs', () => {
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-security-policy']).toContain("script-src 'self' 'unsafe-inline'");
     expect(response.headers['content-security-policy']).toContain("style-src 'self' 'unsafe-inline'");
+    expect(response.headers['content-security-policy']).not.toContain('upgrade-insecure-requests');
+
+    await app.close();
+  });
+
+  it('serves swagger ui static assets', async () => {
+    process.env.ENV = 'test';
+
+    const app = await buildApp();
+    const cssResponse = await app.inject({
+      method: 'GET',
+      url: '/docs/static/swagger-ui.css',
+    });
+    const bundleResponse = await app.inject({
+      method: 'GET',
+      url: '/docs/static/swagger-ui-bundle.js',
+    });
+
+    expect(cssResponse.statusCode).toBe(200);
+    expect(cssResponse.headers['content-type']).toContain('text/css');
+    expect(bundleResponse.statusCode).toBe(200);
+    expect(bundleResponse.headers['content-type']).toContain('application/javascript');
 
     await app.close();
   });

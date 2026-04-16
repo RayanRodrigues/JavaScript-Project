@@ -13,13 +13,17 @@ import { registerTaskRoutes } from '../modules/tasks/tasks.routes.js';
 const API_PREFIX = '/api';
 const SWAGGER_CSP_OPTIONS = {
   contentSecurityPolicy: {
+    useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:'],
+      fontSrc: ["'self'", 'https:', 'data:'],
     },
   },
+  crossOriginOpenerPolicy: false,
+  originAgentCluster: false,
 };
 
 export async function buildApp() {

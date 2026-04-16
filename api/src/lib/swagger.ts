@@ -4,6 +4,21 @@ import type { FastifyInstance } from 'fastify';
 import * as zodToJsonSchemaModule from 'zod-to-json-schema';
 import { z } from 'zod';
 import { getAppEnv } from '../config/env.js';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const swaggerUiPackagePath = require.resolve('@fastify/swagger-ui/package.json');
+const swaggerStaticDir = path.join(path.dirname(swaggerUiPackagePath), 'static');
+const swaggerAssetTypes: Record<string, string> = {
+  'swagger-ui.css': 'text/css; charset=utf-8',
+  'index.css': 'text/css; charset=utf-8',
+  'swagger-ui-bundle.js': 'application/javascript; charset=utf-8',
+  'swagger-ui-standalone-preset.js': 'application/javascript; charset=utf-8',
+  'favicon-32x32.png': 'image/png',
+  'favicon-16x16.png': 'image/png',
+};
 
 type OpenApiSchema = Record<string, unknown> & {
   $schema?: unknown;
@@ -68,4 +83,14 @@ export async function registerSwaggerDocs(app: FastifyInstance) {
   await app.register(swaggerUi, {
     routePrefix: '/docs',
   });
+
+  for (const [filename, contentType] of Object.entries(swaggerAssetTypes)) {
+    app.get(`/docs/static/${filename}`, {
+      schema: { hide: true },
+    }, async (_request, reply) => {
+      const asset = await readFile(path.join(swaggerStaticDir, filename));
+
+      return reply.type(contentType).send(asset);
+    });
+  }
 }
