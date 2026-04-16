@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import { registerAuthRoutes } from '../modules/auth/auth.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -22,6 +23,7 @@ export async function buildApp() {
   });
 
   app.get('/health', async () => ({ status: 'ok' }));
+  await registerAuthRoutes(app);
 
   return app;
 }
