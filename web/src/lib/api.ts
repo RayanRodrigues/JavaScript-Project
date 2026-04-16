@@ -1,12 +1,12 @@
-const API_ORIGIN = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 import { clearStoredSession } from './session'
+import { getApiOrigin } from '../config/env'
 
 type ApiFetchOptions = {
   redirectOnUnauthorized?: boolean
 }
 
 export function buildApiUrl(path: string): string {
-  const trimmedOrigin = API_ORIGIN.replace(/\/+$/, '')
+  const trimmedOrigin = getApiOrigin()
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const apiBase = trimmedOrigin.endsWith('/api') ? trimmedOrigin : `${trimmedOrigin}/api`
 
