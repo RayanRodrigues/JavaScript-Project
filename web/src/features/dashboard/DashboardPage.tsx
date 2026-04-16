@@ -1,5 +1,6 @@
 import PageHeader from '../../components/PageHeader'
 import '../../styles/page.css'
+import './dashboard.css'
 
 function DashboardPage() {
   return (

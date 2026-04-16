@@ -1,5 +1,6 @@
 import PageHeader from '../../components/PageHeader'
 import '../../styles/page.css'
+import './add-task.css'
 
 function AddTaskPage() {
   return (
