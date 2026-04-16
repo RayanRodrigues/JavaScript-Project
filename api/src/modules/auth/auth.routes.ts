@@ -1,6 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { sendError } from '../../lib/http-errors.js';
+import {
+  authErrorJsonSchema,
+  bearerAuthSecurity,
+  internalErrorJsonSchema,
+  invalidRequestErrorJsonSchema,
+  toOpenApiSchema,
+} from '../../lib/swagger.js';
 import { ZodError } from 'zod';
 import {
   authCredentialsBodySchema,
@@ -11,7 +18,19 @@ import {
 import { AuthError, loginUser, registerUser } from './auth.service.js';
 
 export async function registerAuthRoutes(app: FastifyInstance) {
-  app.post('/auth/register', async (request, reply) => {
+  app.post('/auth/register', {
+    schema: {
+      tags: ['Auth'],
+      summary: 'Register a new user',
+      body: toOpenApiSchema(authCredentialsBodySchema),
+      response: {
+        200: toOpenApiSchema(authRegisterResponseSchema),
+        400: invalidRequestErrorJsonSchema,
+        401: authErrorJsonSchema,
+        500: internalErrorJsonSchema,
+      },
+    },
+  }, async (request, reply) => {
     try {
       const body = authCredentialsBodySchema.parse(request.body);
 
@@ -31,7 +50,19 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
   });
 
-  app.post('/auth/login', async (request, reply) => {
+  app.post('/auth/login', {
+    schema: {
+      tags: ['Auth'],
+      summary: 'Authenticate an existing user',
+      body: toOpenApiSchema(authCredentialsBodySchema),
+      response: {
+        200: toOpenApiSchema(authLoginResponseSchema),
+        400: invalidRequestErrorJsonSchema,
+        401: authErrorJsonSchema,
+        500: internalErrorJsonSchema,
+      },
+    },
+  }, async (request, reply) => {
     try {
       const body = authCredentialsBodySchema.parse(request.body);
 
@@ -51,7 +82,18 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
   });
 
-  app.get('/auth/me', { preHandler: requireAuth }, async (request) => {
+  app.get('/auth/me', {
+    preHandler: requireAuth,
+    schema: {
+      tags: ['Auth'],
+      summary: 'Return the authenticated user',
+      security: bearerAuthSecurity,
+      response: {
+        200: toOpenApiSchema(authMeResponseSchema),
+        401: authErrorJsonSchema,
+      },
+    },
+  }, async (request) => {
     return authMeResponseSchema.parse({
       authenticated: true,
       user: request.user,

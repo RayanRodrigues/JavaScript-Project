@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import { registerSwaggerDocs } from '../lib/swagger.js';
 import { registerAuthRoutes } from '../modules/auth/auth.routes.js';
 import { registerDashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
 import { registerProgressRoutes } from '../modules/progress/progress.routes.js';
@@ -12,6 +13,10 @@ export async function buildApp() {
   const app = Fastify({
     logger: { level: 'warn' },
     disableRequestLogging: true,
+  });
+
+  app.setValidatorCompiler(() => {
+    return (value) => ({ value });
   });
 
   await app.register(helmet);
@@ -26,7 +31,24 @@ export async function buildApp() {
     timeWindow: '1 minute',
   });
 
-  app.get('/health', async () => ({ status: 'ok' }));
+  await registerSwaggerDocs(app);
+
+  app.get('/health', {
+    schema: {
+      tags: ['System'],
+      summary: 'Check API availability',
+      response: {
+        200: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['status'],
+          properties: {
+            status: { type: 'string', enum: ['ok'] },
+          },
+        },
+      },
+    },
+  }, async () => ({ status: 'ok' }));
   await registerAuthRoutes(app);
   await registerDashboardRoutes(app);
   await registerProgressRoutes(app);

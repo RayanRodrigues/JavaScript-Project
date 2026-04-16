@@ -1,10 +1,20 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
 import { sendError } from '../../lib/http-errors.js';
+import {
+  authErrorJsonSchema,
+  bearerAuthSecurity,
+  internalErrorJsonSchema,
+  invalidRequestErrorJsonSchema,
+  notFoundErrorJsonSchema,
+  toOpenApiSchema,
+} from '../../lib/swagger.js';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import {
   createTaskBodySchema,
   listTasksQuerySchema,
+  taskListResponseSchema,
+  taskResponseSchema,
   updateTaskBodySchema,
   updateTaskParamsSchema,
 } from './tasks.schema.js';
@@ -31,7 +41,21 @@ function sendValidationError(app: FastifyInstance, reply: FastifyReply, error: u
 }
 
 export async function registerTaskRoutes(app: FastifyInstance) {
-  app.get('/tasks', { preHandler: requireAuth }, async (request, reply) => {
+  app.get('/tasks', {
+    preHandler: requireAuth,
+    schema: {
+      tags: ['Tasks'],
+      summary: 'List tasks for the current user',
+      security: bearerAuthSecurity,
+      querystring: toOpenApiSchema(listTasksQuerySchema),
+      response: {
+        200: toOpenApiSchema(taskListResponseSchema),
+        400: invalidRequestErrorJsonSchema,
+        401: authErrorJsonSchema,
+        500: internalErrorJsonSchema,
+      },
+    },
+  }, async (request, reply) => {
     try {
       const query = listTasksQuerySchema.parse(request.query);
 
@@ -41,7 +65,21 @@ export async function registerTaskRoutes(app: FastifyInstance) {
     }
   });
 
-  app.post('/tasks', { preHandler: requireAuth }, async (request, reply) => {
+  app.post('/tasks', {
+    preHandler: requireAuth,
+    schema: {
+      tags: ['Tasks'],
+      summary: 'Create a task',
+      security: bearerAuthSecurity,
+      body: toOpenApiSchema(createTaskBodySchema),
+      response: {
+        200: toOpenApiSchema(taskResponseSchema),
+        400: invalidRequestErrorJsonSchema,
+        401: authErrorJsonSchema,
+        500: internalErrorJsonSchema,
+      },
+    },
+  }, async (request, reply) => {
     try {
       const body = createTaskBodySchema.parse(request.body);
 
@@ -51,7 +89,23 @@ export async function registerTaskRoutes(app: FastifyInstance) {
     }
   });
 
-  app.patch('/tasks/:id', { preHandler: requireAuth }, async (request, reply) => {
+  app.patch('/tasks/:id', {
+    preHandler: requireAuth,
+    schema: {
+      tags: ['Tasks'],
+      summary: 'Update a task',
+      security: bearerAuthSecurity,
+      params: toOpenApiSchema(updateTaskParamsSchema),
+      body: toOpenApiSchema(updateTaskBodySchema),
+      response: {
+        200: toOpenApiSchema(taskResponseSchema),
+        400: invalidRequestErrorJsonSchema,
+        401: authErrorJsonSchema,
+        404: notFoundErrorJsonSchema,
+        500: internalErrorJsonSchema,
+      },
+    },
+  }, async (request, reply) => {
     try {
       const params = updateTaskParamsSchema.parse(request.params);
       const body = updateTaskBodySchema.parse(request.body);
@@ -62,7 +116,21 @@ export async function registerTaskRoutes(app: FastifyInstance) {
     }
   });
 
-  app.delete('/tasks/:id', { preHandler: requireAuth }, async (request, reply) => {
+  app.delete('/tasks/:id', {
+    preHandler: requireAuth,
+    schema: {
+      tags: ['Tasks'],
+      summary: 'Delete a task',
+      security: bearerAuthSecurity,
+      params: toOpenApiSchema(updateTaskParamsSchema),
+      response: {
+        204: { type: 'null' },
+        401: authErrorJsonSchema,
+        404: notFoundErrorJsonSchema,
+        500: internalErrorJsonSchema,
+      },
+    },
+  }, async (request, reply) => {
     try {
       const params = updateTaskParamsSchema.parse(request.params);
 
