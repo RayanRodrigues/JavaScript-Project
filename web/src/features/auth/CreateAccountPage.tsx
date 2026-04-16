@@ -5,20 +5,16 @@ import { useAuth } from '../../hooks/useAuth'
 function CreateAccountPage() {
   const { user, signup } = useAuth()
   const navigate = useNavigate()
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   if (user) return <Navigate to="/dashboard" replace />
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (!name.trim()) {
-      setError('Name is required.')
-      return
-    }
     if (!email.includes('@')) {
       setError('Enter a valid email address.')
       return
@@ -27,7 +23,9 @@ function CreateAccountPage() {
       setError('Password must be at least 6 characters.')
       return
     }
-    const result = signup(name.trim(), email, password)
+    setLoading(true)
+    const result = await signup(email, password)
+    setLoading(false)
     if (!result.success) {
       setError(result.error)
       return
@@ -58,21 +56,6 @@ function CreateAccountPage() {
                 {error}
               </p>
             )}
-
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Full name
-              </label>
-              <input
-                id="name"
-                type="text"
-                autoComplete="name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Alex Smith"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -106,9 +89,10 @@ function CreateAccountPage() {
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 text-sm font-semibold transition-colors"
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors"
             >
-              Create account
+              {loading ? 'Creating account…' : 'Create account'}
             </button>
           </form>
 

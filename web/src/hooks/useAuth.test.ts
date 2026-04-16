@@ -1,9 +1,27 @@
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useAuth } from './useAuth'
+
+const fakeUser = { userId: 'u1', email: 'alice@example.com' }
+const fakeSession = { idToken: 'tok123', refreshToken: 'ref456', expiresIn: '3600' }
+
+function stubFetchOk(body: unknown) {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve(body),
+  }))
+}
+
+function stubFetchFail(body: unknown) {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: false,
+    json: () => Promise.resolve(body),
+  }))
+}
 
 beforeEach(() => {
   localStorage.clear()
+  vi.restoreAllMocks()
 })
 
 describe('useAuth', () => {
@@ -12,79 +30,83 @@ describe('useAuth', () => {
     expect(result.current.user).toBeNull()
   })
 
-  it('signup creates an account and sets the user', () => {
+  it('restores user from localStorage on mount', () => {
+    localStorage.setItem('auth_user', JSON.stringify(fakeUser))
     const { result } = renderHook(() => useAuth())
-    act(() => {
-      result.current.signup('Alice', 'alice@example.com', 'secret1')
-    })
-    expect(result.current.user).toEqual({ name: 'Alice', email: 'alice@example.com' })
+    expect(result.current.user).toEqual(fakeUser)
   })
 
-  it('signup persists the user in localStorage', () => {
+  it('login sets user and stores token on success', async () => {
+    stubFetchOk({ user: fakeUser, session: fakeSession })
     const { result } = renderHook(() => useAuth())
-    act(() => {
-      result.current.signup('Alice', 'alice@example.com', 'secret1')
+    await act(async () => {
+      await result.current.login('alice@example.com', 'pass123')
     })
-    const stored = JSON.parse(localStorage.getItem('auth_user')!)
-    expect(stored).toEqual({ name: 'Alice', email: 'alice@example.com' })
+    expect(result.current.user).toEqual(fakeUser)
+    expect(localStorage.getItem('auth_token')).toBe('tok123')
   })
 
-  it('signup returns an error when email is already registered', () => {
+  it('login returns the server error message on failure', async () => {
+    stubFetchFail({ message: 'Invalid email or password' })
     const { result } = renderHook(() => useAuth())
-    act(() => {
-      result.current.signup('Alice', 'alice@example.com', 'secret1')
+    let outcome!: Awaited<ReturnType<typeof result.current.login>>
+    await act(async () => {
+      outcome = await result.current.login('alice@example.com', 'wrong')
     })
-    let outcome: ReturnType<typeof result.current.signup>
-    act(() => {
-      outcome = result.current.signup('Alice 2', 'alice@example.com', 'secret2')
-    })
-    expect(outcome!).toEqual({ success: false, error: 'An account with this email already exists.' })
+    expect(outcome).toEqual({ success: false, error: 'Invalid email or password' })
+    expect(result.current.user).toBeNull()
   })
 
-  it('login succeeds with correct credentials', () => {
+  it('login returns a network error when fetch rejects', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
     const { result } = renderHook(() => useAuth())
-    act(() => {
-      result.current.signup('Bob', 'bob@example.com', 'pass123')
+    let outcome!: Awaited<ReturnType<typeof result.current.login>>
+    await act(async () => {
+      outcome = await result.current.login('alice@example.com', 'pass123')
     })
-    act(() => {
-      result.current.logout()
-    })
-    act(() => {
-      result.current.login('bob@example.com', 'pass123')
-    })
-    expect(result.current.user).toEqual({ name: 'Bob', email: 'bob@example.com' })
+    expect(outcome).toEqual({ success: false, error: 'Unable to reach the server. Please try again.' })
   })
 
-  it('login returns an error for wrong password', () => {
+  it('signup sets user and stores token on success', async () => {
+    stubFetchOk({ user: fakeUser, session: fakeSession })
     const { result } = renderHook(() => useAuth())
-    act(() => {
-      result.current.signup('Bob', 'bob@example.com', 'pass123')
+    await act(async () => {
+      await result.current.signup('alice@example.com', 'pass123')
     })
-    act(() => {
-      result.current.logout()
-    })
-    let outcome: ReturnType<typeof result.current.login>
-    act(() => {
-      outcome = result.current.login('bob@example.com', 'wrongpass')
-    })
-    expect(outcome!).toEqual({ success: false, error: 'Invalid email or password.' })
+    expect(result.current.user).toEqual(fakeUser)
+    expect(localStorage.getItem('auth_token')).toBe('tok123')
   })
 
-  it('logout clears the user', () => {
+  it('signup returns error on duplicate email', async () => {
+    stubFetchFail({ message: 'Email is already in use' })
     const { result } = renderHook(() => useAuth())
-    act(() => {
-      result.current.signup('Carol', 'carol@example.com', 'abc123')
+    let outcome!: Awaited<ReturnType<typeof result.current.signup>>
+    await act(async () => {
+      outcome = await result.current.signup('alice@example.com', 'pass123')
+    })
+    expect(outcome).toEqual({ success: false, error: 'Email is already in use' })
+  })
+
+  it('logout clears user and token from state and localStorage', async () => {
+    stubFetchOk({ user: fakeUser, session: fakeSession })
+    const { result } = renderHook(() => useAuth())
+    await act(async () => {
+      await result.current.login('alice@example.com', 'pass123')
     })
     act(() => {
       result.current.logout()
     })
     expect(result.current.user).toBeNull()
     expect(localStorage.getItem('auth_user')).toBeNull()
+    expect(localStorage.getItem('auth_token')).toBeNull()
   })
 
-  it('restores session from localStorage on mount', () => {
-    localStorage.setItem('auth_user', JSON.stringify({ name: 'Dan', email: 'dan@example.com' }))
+  it('getToken returns the stored idToken', async () => {
+    stubFetchOk({ user: fakeUser, session: fakeSession })
     const { result } = renderHook(() => useAuth())
-    expect(result.current.user).toEqual({ name: 'Dan', email: 'dan@example.com' })
+    await act(async () => {
+      await result.current.login('alice@example.com', 'pass123')
+    })
+    expect(result.current.getToken()).toBe('tok123')
   })
 })

@@ -1,24 +1,12 @@
 import { useState } from 'react'
 
-export type User = { name: string; email: string }
-
-type Account = { name: string; email: string; password: string }
+export type User = { userId: string; email: string | null }
+type Session = { idToken: string; refreshToken: string; expiresIn: string }
 type AuthResult = { success: true } | { success: false; error: string }
 
 const USER_KEY = 'auth_user'
-const ACCOUNTS_KEY = 'auth_accounts'
-
-function readAccounts(): Account[] {
-  try {
-    return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) ?? '[]')
-  } catch {
-    return []
-  }
-}
-
-function writeAccounts(accounts: Account[]): void {
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts))
-}
+const TOKEN_KEY = 'auth_token'
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 
 function readUser(): User | null {
   try {
@@ -28,34 +16,63 @@ function readUser(): User | null {
   }
 }
 
+function storeSession(user: User, session: Session): void {
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
+  localStorage.setItem(TOKEN_KEY, session.idToken)
+}
+
+export function getStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(readUser)
 
-  function login(email: string, password: string): AuthResult {
-    const match = readAccounts().find(a => a.email === email && a.password === password)
-    if (!match) return { success: false, error: 'Invalid email or password.' }
-    const u: User = { name: match.name, email: match.email }
-    localStorage.setItem(USER_KEY, JSON.stringify(u))
-    setUser(u)
-    return { success: true }
+  async function login(email: string, password: string): Promise<AuthResult> {
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { message?: string }
+        return { success: false, error: body.message ?? 'Login failed.' }
+      }
+      const { user: u, session } = await res.json() as { user: User; session: Session }
+      storeSession(u, session)
+      setUser(u)
+      return { success: true }
+    } catch {
+      return { success: false, error: 'Unable to reach the server. Please try again.' }
+    }
   }
 
-  function signup(name: string, email: string, password: string): AuthResult {
-    const accounts = readAccounts()
-    if (accounts.some(a => a.email === email)) {
-      return { success: false, error: 'An account with this email already exists.' }
+  async function signup(email: string, password: string): Promise<AuthResult> {
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { message?: string }
+        return { success: false, error: body.message ?? 'Registration failed.' }
+      }
+      const { user: u, session } = await res.json() as { user: User; session: Session }
+      storeSession(u, session)
+      setUser(u)
+      return { success: true }
+    } catch {
+      return { success: false, error: 'Unable to reach the server. Please try again.' }
     }
-    writeAccounts([...accounts, { name, email, password }])
-    const u: User = { name, email }
-    localStorage.setItem(USER_KEY, JSON.stringify(u))
-    setUser(u)
-    return { success: true }
   }
 
   function logout(): void {
     localStorage.removeItem(USER_KEY)
+    localStorage.removeItem(TOKEN_KEY)
     setUser(null)
   }
 
-  return { user, login, signup, logout }
+  return { user, login, signup, logout, getToken: getStoredToken }
 }

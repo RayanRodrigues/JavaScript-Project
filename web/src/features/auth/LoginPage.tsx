@@ -8,10 +8,11 @@ function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   if (user) return <Navigate to="/dashboard" replace />
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     if (!email.includes('@')) {
@@ -22,7 +23,9 @@ function LoginPage() {
       setError('Password must be at least 6 characters.')
       return
     }
-    const result = login(email, password)
+    setLoading(true)
+    const result = await login(email, password)
+    setLoading(false)
     if (!result.success) {
       setError(result.error)
       return
@@ -86,9 +89,10 @@ function LoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 text-sm font-semibold transition-colors"
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors"
             >
-              Sign in
+              {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 
