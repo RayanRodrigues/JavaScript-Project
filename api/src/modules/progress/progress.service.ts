@@ -6,7 +6,10 @@ function toPercentage(value: number) {
 }
 
 export async function getProgressSummary(userId: string) {
-  const { tasks } = await listTasksForUser(userId);
+  const { tasks } = await listTasksForUser(userId, {
+    status: 'all',
+    limit: 100,
+  });
   const completedTasks = tasks.filter((task) => task.status === 'completed').length;
   const completionRate = tasks.length === 0 ? 0 : toPercentage((completedTasks / tasks.length) * 100);
 
