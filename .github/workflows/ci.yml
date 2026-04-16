@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   frontend-quality:
-    name: Frontend Lint and Build
+    name: Frontend Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -35,9 +35,6 @@ jobs:
 
       - name: Lint frontend
         run: npm run lint --workspace web
-
-      - name: Build frontend
-        run: npm run build --workspace web
 
   backend-quality:
     name: Backend Lint and Build
@@ -62,6 +59,27 @@ jobs:
 
       - name: Build backend
         run: npm run build --workspace api
+
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --include=optional
+
+      - name: Run backend tests
+        run: npm run test --workspace api
 
   frontend-tests:
     name: Frontend Tests
