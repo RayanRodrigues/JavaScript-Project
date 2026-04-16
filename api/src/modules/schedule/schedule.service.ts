@@ -6,7 +6,10 @@ function isOverdue(dueDate: string, today: string) {
 }
 
 export async function getScheduleSummary(userId: string, today = new Date().toISOString().slice(0, 10)) {
-  const { tasks } = await listTasksForUser(userId);
+  const { tasks } = await listTasksForUser(userId, {
+    status: 'all',
+    limit: 100,
+  });
 
   const scheduledTasks = tasks
     .filter((task) => task.dueDate)
