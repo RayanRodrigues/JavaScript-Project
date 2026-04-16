@@ -1,6 +1,14 @@
 import PageHeader from '../../components/PageHeader'
+import ProgressMeter from '../../components/ProgressMeter'
+import SummaryList from '../../components/SummaryList'
 import '../../styles/page.css'
 import './progress.css'
+
+const subjectBreakdown = [
+  { label: 'Math', value: '4 tasks' },
+  { label: 'History', value: '3 tasks' },
+  { label: 'Biology', value: '5 tasks' },
+]
 
 function ProgressPage() {
   return (
@@ -13,31 +21,17 @@ function ProgressPage() {
       <div className="content-grid">
         <div className="card">
           <h3>Completion Overview</h3>
-          <div className="progress-block">
-            <p>Tasks Completed</p>
-            <div className="progress-bar">
-              <div className="progress-fill green-fill" style={{ width: '58%' }} />
-            </div>
-            <span>58% of all tasks completed</span>
-          </div>
+          <ProgressMeter
+            label="Tasks Completed"
+            percentage={58}
+            tone="success"
+            valueText="58% of all tasks completed"
+          />
         </div>
 
         <div className="card">
           <h3>Subject Breakdown</h3>
-          <ul className="item-list">
-            <li>
-              <span>Math</span>
-              <strong>4 tasks</strong>
-            </li>
-            <li>
-              <span>History</span>
-              <strong>3 tasks</strong>
-            </li>
-            <li>
-              <span>Biology</span>
-              <strong>5 tasks</strong>
-            </li>
-          </ul>
+          <SummaryList items={subjectBreakdown} />
         </div>
       </div>
     </section>

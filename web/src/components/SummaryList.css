@@ -1,0 +1,17 @@
+.summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+.summary-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.summary-list li:last-child {
+  border-bottom: none;
+}

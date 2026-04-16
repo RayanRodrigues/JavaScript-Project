@@ -1,6 +1,14 @@
 import PageHeader from '../../components/PageHeader'
+import ProgressMeter from '../../components/ProgressMeter'
+import SummaryList from '../../components/SummaryList'
 import '../../styles/page.css'
 import './dashboard.css'
+
+const upcomingDeadlines = [
+  { label: 'Math Quiz Review', value: 'Apr 18' },
+  { label: 'History Essay Outline', value: 'Apr 19' },
+  { label: 'Biology Flashcards', value: 'Apr 20' },
+]
 
 function DashboardPage() {
   return (
@@ -28,31 +36,12 @@ function DashboardPage() {
       <div className="content-grid">
         <div className="card">
           <h3>Upcoming Deadlines</h3>
-          <ul className="item-list">
-            <li>
-              <span>Math Quiz Review</span>
-              <strong>Apr 18</strong>
-            </li>
-            <li>
-              <span>History Essay Outline</span>
-              <strong>Apr 19</strong>
-            </li>
-            <li>
-              <span>Biology Flashcards</span>
-              <strong>Apr 20</strong>
-            </li>
-          </ul>
+          <SummaryList items={upcomingDeadlines} />
         </div>
 
         <div className="card">
           <h3>Study Focus</h3>
-          <div className="progress-block">
-            <p>Weekly Goal</p>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: '68%' }} />
-            </div>
-            <span>68% completed</span>
-          </div>
+          <ProgressMeter label="Weekly Goal" percentage={68} valueText="68% completed" />
         </div>
       </div>
     </section>
