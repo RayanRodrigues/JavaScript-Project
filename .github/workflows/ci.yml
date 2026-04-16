@@ -1,4 +1,4 @@
-name: Code Quality and Tests
+name: CI
 
 on:
   push:
@@ -10,8 +10,13 @@ on:
       - main
       - dev
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  code-quality:
+  frontend-quality:
+    name: Frontend Lint and Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -22,28 +27,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --include=optional
-
-      - name: Repair optional native dependencies
         run: npm install --include=optional
 
-      - name: Lint web
+      - name: Lint frontend
         run: npm run lint --workspace web
 
-      - name: Lint api
-        run: npm run lint --workspace api
-
-      - name: Build web
+      - name: Build frontend
         run: npm run build --workspace web
 
-      - name: Build api
-        run: npm run build --workspace api
-
-  test:
+  backend-quality:
+    name: Backend Lint and Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -54,14 +51,35 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --include=optional
-
-      - name: Repair optional native dependencies
         run: npm install --include=optional
 
-      - name: Run web tests
+      - name: Lint backend
+        run: npm run lint --workspace api
+
+      - name: Build backend
+        run: npm run build --workspace api
+
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --include=optional
+
+      - name: Run frontend tests
         run: npm run test --workspace web
