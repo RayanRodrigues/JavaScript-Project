@@ -5,6 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import { registerAuthRoutes } from '../modules/auth/auth.routes.js';
 import { registerDashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
 import { registerProgressRoutes } from '../modules/progress/progress.routes.js';
+import { registerScheduleRoutes } from '../modules/schedule/schedule.routes.js';
 import { registerTaskRoutes } from '../modules/tasks/tasks.routes.js';
 
 export async function buildApp() {
@@ -29,6 +30,7 @@ export async function buildApp() {
   await registerAuthRoutes(app);
   await registerDashboardRoutes(app);
   await registerProgressRoutes(app);
+  await registerScheduleRoutes(app);
   await registerTaskRoutes(app);
 
   return app;
