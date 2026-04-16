@@ -1,73 +1,161 @@
-# React + TypeScript + Vite
+# Study Planner
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Study Planner is a student productivity app for organizing study tasks, tracking deadlines, planning study sessions, and reviewing progress.
 
-Currently, two official plugins are available:
+This repository is a monorepo with:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `web/`: React + TypeScript + Vite frontend
+- `api/`: Fastify + TypeScript backend
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- dashboard overview for study activity
+- add-task flow for creating study items
+- schedule page for planned study sessions
+- progress page for completion tracking
+- backend health endpoint at `/health`
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Frontend: React, TypeScript, Vite, React Router
+- Backend: Node.js, Fastify, TypeScript, Zod, Firebase Admin SDK
+- Testing: Vitest
+- Tooling: ESLint, npm workspaces
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Project Structure
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+.
+├── AGENT.md
+├── CLAUDE.md
+├── package.json
+├── api/
+│   ├── package.json
+│   └── src/
+│       ├── index.ts
+│       └── app/
+│           └── app.ts
+└── web/
+    ├── package.json
+    ├── index.html
+    └── src/
+        ├── app/
+        ├── components/
+        ├── features/
+        ├── hooks/
+        ├── routes/
+        └── styles/
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js 20+ recommended
+- npm 10+ recommended
+
+### Install
+
+From the repository root:
+
+```bash
+npm install
 ```
+
+## Running the App
+
+Start the frontend:
+
+```bash
+npm run dev
+```
+
+Start the backend:
+
+```bash
+npm run dev:api
+```
+
+Default local URLs:
+
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:3001`
+- Health check: `http://localhost:3001/health`
+
+## Available Scripts
+
+Run these from the repository root unless noted otherwise.
+
+```bash
+npm run dev
+npm run dev:api
+npm run build
+npm run lint
+npm run preview
+npm run test:api
+```
+
+Frontend workspace scripts:
+
+```bash
+npm run test --workspace web
+npm run test:watch --workspace web
+```
+
+Backend workspace scripts:
+
+```bash
+npm run test --workspace api
+npm run test:watch --workspace api
+```
+
+## Environment Notes
+
+The backend currently reads environment variables through `dotenv`.
+
+Common values:
+
+- `PORT`: API port, defaults to `3001`
+- `HOST`: API host, defaults to `0.0.0.0`
+- `CORS_ORIGIN`: allowed frontend origin, defaults to `http://localhost:5173`
+
+If you add Firebase credentials or other secrets later, keep them out of source control.
+
+## Frontend Architecture
+
+The frontend is organized by responsibility:
+
+- `app/`: app shell and top-level composition
+- `routes/`: route registration
+- `features/`: page-level feature modules such as dashboard, tasks, schedule, and progress
+- `components/`: reusable presentational UI
+- `hooks/`: reusable React hooks
+- `styles/`: shared global and layout styles
+
+## Backend Architecture
+
+The backend currently has a small Fastify setup with:
+
+- security middleware via Helmet
+- CORS configuration
+- rate limiting
+- a `/health` endpoint
+
+The intended direction is feature-based backend modules as the API grows.
+
+## Testing
+
+Frontend and backend both use Vitest.
+
+Examples:
+
+```bash
+npm run test --workspace web
+npm run test --workspace api
+```
+
+## Notes
+
+- `AGENT.md` defines the project operating contract and architectural expectations.
+- `CLAUDE.md` and `.claude/` contain Claude-specific workflow guidance and hook configuration for that environment.
+- Some internal package names still use the original workspace naming. That does not affect the visible product name, which is `Study Planner`.
