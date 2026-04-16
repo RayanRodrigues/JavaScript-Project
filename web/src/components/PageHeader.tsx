@@ -1,8 +1,3 @@
-import './PageHeader.css'
-
-// Reusable UI component for consistent page titles and subtitles.
-// Supports a cleaner interface and better user experience.
-
 interface PageHeaderProps {
   title: string
   subtitle: string
@@ -10,9 +5,9 @@ interface PageHeaderProps {
 
 function PageHeader({ title, subtitle }: PageHeaderProps) {
   return (
-    <div className="page-header">
-      <h2>{title}</h2>
-      <p>{subtitle}</p>
+    <div className="mb-6">
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 m-0">{title}</h2>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-0">{subtitle}</p>
     </div>
   )
 }
