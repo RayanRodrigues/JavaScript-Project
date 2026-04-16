@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import { registerSystemRoutes } from '../modules/system/system.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -21,7 +22,7 @@ export async function buildApp() {
     timeWindow: '1 minute',
   });
 
-  app.get('/health', async () => ({ status: 'ok' }));
+  await registerSystemRoutes(app);
 
   return app;
 }
