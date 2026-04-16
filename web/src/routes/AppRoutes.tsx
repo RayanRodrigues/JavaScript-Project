@@ -5,6 +5,7 @@ import CreateAccountPage from '../features/auth/CreateAccountPage'
 import AppShell from '../app/AppShell'
 import AddTaskPage from '../features/tasks/AddTaskPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
+import ProfilePage from '../features/auth/ProfilePage'
 import ProgressPage from '../features/progress/ProgressPage'
 import SchedulePage from '../features/schedule/SchedulePage'
 
@@ -20,6 +21,7 @@ function AuthenticatedApp() {
         <Route path="/add-task" element={<Navigate to="/tasks" replace />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/progress" element={<ProgressPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </AppShell>
   )

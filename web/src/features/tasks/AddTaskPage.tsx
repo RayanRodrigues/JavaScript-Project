@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import PageHeader from '../../components/PageHeader'
+import TaskCard from './TaskCard'
 import {
   createTask,
   listTasks,
@@ -11,6 +12,12 @@ import {
 import type { Task, TaskFormValues, TaskPriority } from './task.types'
 
 const PRIORITIES: TaskPriority[] = ['Low', 'Medium', 'High']
+
+const PRIORITY_PILL_SELECTED: Record<TaskPriority, string> = {
+  Low: 'bg-emerald-500 text-white border-transparent',
+  Medium: 'bg-amber-500 text-white border-transparent',
+  High: 'bg-rose-500 text-white border-transparent',
+}
 
 const INPUT_CLASS = [
   'w-full rounded-xl border border-slate-200 dark:border-slate-700',
@@ -31,14 +38,26 @@ const EMPTY_FORM: TaskFormValues = {
   priority: 'Low',
 }
 
+function PlusIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+    </svg>
+  )
+}
+
+function PencilIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+    </svg>
+  )
+}
+
 function upsertTask(tasks: Task[], nextTask: Task) {
-  const existingTaskIndex = tasks.findIndex(({ id }) => id === nextTask.id)
-
-  if (existingTaskIndex === -1) {
-    return [nextTask, ...tasks]
-  }
-
-  return tasks.map((task) => (task.id === nextTask.id ? nextTask : task))
+  const existingIndex = tasks.findIndex(({ id }) => id === nextTask.id)
+  if (existingIndex === -1) return [nextTask, ...tasks]
+  return tasks.map((t) => (t.id === nextTask.id ? nextTask : t))
 }
 
 function AddTaskPage() {
@@ -53,24 +72,19 @@ function AddTaskPage() {
   useEffect(() => {
     async function loadTasks() {
       try {
-        const nextTasks = await listTasks()
-        setTasks(nextTasks)
+        setTasks(await listTasks())
       } catch {
         setErrorMessage('Unable to load tasks right now.')
       } finally {
         setIsLoading(false)
       }
     }
-
     void loadTasks()
   }, [])
 
   function handleFieldChange(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = event.target
-    setFormValues((currentValues) => ({
-      ...currentValues,
-      [name]: value,
-    }) as TaskFormValues)
+    setFormValues((v) => ({ ...v, [name]: value }) as TaskFormValues)
   }
 
   function resetForm() {
@@ -83,13 +97,11 @@ function AddTaskPage() {
     setIsSubmitting(true)
     setErrorMessage('')
     setFeedbackMessage('')
-
     try {
-      const savedTask = editingTaskId
+      const saved = editingTaskId
         ? await updateTask(editingTaskId, formValues)
         : await createTask(formValues)
-
-      setTasks((currentTasks) => upsertTask(currentTasks, savedTask))
+      setTasks((t) => upsertTask(t, saved))
       setFeedbackMessage(editingTaskId ? 'Task updated.' : 'Task created.')
       resetForm()
     } catch {
@@ -115,30 +127,22 @@ function AddTaskPage() {
   async function handleToggleComplete(task: Task) {
     setErrorMessage('')
     setFeedbackMessage('')
-
     try {
-      const updatedTask = await toggleTaskCompletion(task.id, !task.completed)
-      setTasks((currentTasks) => upsertTask(currentTasks, updatedTask))
+      const updated = await toggleTaskCompletion(task.id, !task.completed)
+      setTasks((t) => upsertTask(t, updated))
     } catch {
       setErrorMessage('Unable to update task status right now.')
     }
   }
 
   async function handleDelete(taskId: string) {
-    if (!window.confirm('Delete this task?')) {
-      return
-    }
-
+    if (!window.confirm('Delete this task?')) return
     setErrorMessage('')
     setFeedbackMessage('')
-
     try {
       await removeTask(taskId)
-      setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId))
-
-      if (editingTaskId === taskId) {
-        resetForm()
-      }
+      setTasks((t) => t.filter((task) => task.id !== taskId))
+      if (editingTaskId === taskId) resetForm()
     } catch {
       setErrorMessage('Unable to delete this task right now.')
     }
@@ -146,23 +150,24 @@ function AddTaskPage() {
 
   return (
     <section>
-      <PageHeader
-        title="Tasks"
-        subtitle="Create, update, complete, and delete study tasks with Firebase."
-      />
+      <PageHeader title="Tasks" subtitle="Create, update, complete, and delete study tasks." />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-8">
+        {/* Form panel */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             <div className="flex items-center justify-between gap-3">
-              <h3 className="m-0 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                {editingTaskId ? 'Edit task' : 'New task'}
-              </h3>
+              <div className="flex items-center gap-2 text-slate-900 dark:text-slate-50">
+                {editingTaskId ? <PencilIcon /> : <PlusIcon />}
+                <h3 className="m-0 text-lg font-semibold">
+                  {editingTaskId ? 'Edit task' : 'New task'}
+                </h3>
+              </div>
               {editingTaskId ? (
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
                 >
                   Cancel edit
                 </button>
@@ -184,42 +189,30 @@ function AddTaskPage() {
             <div className="flex flex-col gap-1.5">
               <label htmlFor="title" className={LABEL_CLASS}>Task Title</label>
               <input
-                id="title"
-                name="title"
-                type="text"
-                value={formValues.title}
-                onChange={handleFieldChange}
+                id="title" name="title" type="text"
+                value={formValues.title} onChange={handleFieldChange}
                 placeholder="Enter task title"
-                className={INPUT_CLASS}
-                required
+                className={INPUT_CLASS} required
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="subject" className={LABEL_CLASS}>Subject</label>
               <input
-                id="subject"
-                name="subject"
-                type="text"
-                value={formValues.subject}
-                onChange={handleFieldChange}
-                placeholder="Enter subject"
-                className={INPUT_CLASS}
-                required
+                id="subject" name="subject" type="text"
+                value={formValues.subject} onChange={handleFieldChange}
+                placeholder="e.g. Math, History"
+                className={INPUT_CLASS} required
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+            <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="dueDate" className={LABEL_CLASS}>Due Date</label>
                 <input
-                  id="dueDate"
-                  name="dueDate"
-                  type="date"
-                  value={formValues.dueDate}
-                  onChange={handleFieldChange}
-                  className={INPUT_CLASS}
-                  required
+                  id="dueDate" name="dueDate" type="date"
+                  value={formValues.dueDate} onChange={handleFieldChange}
+                  className={INPUT_CLASS} required
                 />
               </div>
 
@@ -230,15 +223,13 @@ function AddTaskPage() {
                     <button
                       key={priority}
                       type="button"
-                      onClick={() =>
-                        setFormValues((currentValues) => ({ ...currentValues, priority }))
-                      }
+                      onClick={() => setFormValues((v) => ({ ...v, priority }))}
                       aria-pressed={formValues.priority === priority}
                       className={[
-                        'flex-1 py-3 text-sm font-medium rounded-xl transition-colors',
+                        'flex-1 py-3 text-sm font-medium rounded-xl border transition-colors',
                         formValues.priority === priority
-                          ? 'bg-indigo-600 text-white'
-                          : 'border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800',
+                          ? PRIORITY_PILL_SELECTED[priority]
+                          : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800',
                       ].join(' ')}
                     >
                       {priority}
@@ -251,11 +242,8 @@ function AddTaskPage() {
             <div className="flex flex-col gap-1.5">
               <label htmlFor="notes" className={LABEL_CLASS}>Notes</label>
               <textarea
-                id="notes"
-                name="notes"
-                rows={5}
-                value={formValues.notes}
-                onChange={handleFieldChange}
+                id="notes" name="notes" rows={4}
+                value={formValues.notes} onChange={handleFieldChange}
                 placeholder="Add any study notes or reminders"
                 className={INPUT_CLASS}
               />
@@ -264,14 +252,15 @@ function AddTaskPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-xl py-3 font-semibold transition-colors mt-2 cursor-pointer"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-xl py-3 font-semibold transition-colors cursor-pointer"
             >
-              {isSubmitting ? 'Saving...' : editingTaskId ? 'Update Task' : 'Save Task'}
+              {isSubmitting ? 'Saving…' : editingTaskId ? 'Update Task' : 'Save Task'}
             </button>
           </form>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-8">
+        {/* Task list panel */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between gap-3 mb-5">
             <h3 className="m-0 text-lg font-semibold text-slate-900 dark:text-slate-50">
               Task collection
@@ -282,84 +271,37 @@ function AddTaskPage() {
           </div>
 
           {isLoading ? (
-            <p className="m-0 text-sm text-slate-500 dark:text-slate-400">Loading tasks...</p>
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="rounded-2xl border border-slate-100 dark:border-slate-800 p-5 animate-pulse">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3 mb-3" />
+                  <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/3" />
+                </div>
+              ))}
+            </div>
           ) : null}
 
           {!isLoading && tasks.length === 0 ? (
-            <p className="m-0 text-sm text-slate-500 dark:text-slate-400">
-              No tasks in Firestore yet. Create the first one from the form.
-            </p>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 grid place-items-center text-slate-400 mb-3">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">No tasks yet</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">Use the form to create your first task.</p>
+            </div>
           ) : null}
 
           <div className="space-y-4">
             {tasks.map((task) => (
-              <article
+              <TaskCard
                 key={task.id}
-                className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-950/40"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4
-                        className={[
-                          'm-0 text-base font-semibold text-slate-900 dark:text-slate-50',
-                          task.completed ? 'line-through opacity-70' : '',
-                        ].join(' ')}
-                      >
-                        {task.title}
-                      </h4>
-                      <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
-                        {task.priority}
-                      </span>
-                    </div>
-                    <p className="mb-0 mt-2 text-sm text-slate-600 dark:text-slate-300">
-                      {task.subject} • Due {task.dueDate}
-                    </p>
-                    {task.notes ? (
-                      <p className="mb-0 mt-2 text-sm text-slate-500 dark:text-slate-400">
-                        {task.notes}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <span
-                    className={[
-                      'rounded-full px-2.5 py-1 text-xs font-semibold',
-                      task.completed
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-                    ].join(' ')}
-                  >
-                    {task.completed ? 'Completed' : 'Pending'}
-                  </span>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleToggleComplete(task)}
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    {task.completed ? 'Mark incomplete' : 'Mark complete'}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => startEditing(task)}
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(task.id)}
-                    className="rounded-xl border border-rose-200 px-3 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
+                task={task}
+                onToggleComplete={(t) => void handleToggleComplete(t)}
+                onEdit={startEditing}
+                onDelete={(id) => void handleDelete(id)}
+              />
             ))}
           </div>
         </div>
