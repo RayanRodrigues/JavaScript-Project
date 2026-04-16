@@ -1,7 +1,7 @@
-import AppShell from './app/AppShell'
+import { AppRoutes } from './routes/AppRoutes'
 
 function App() {
-  return <AppShell />
+  return <AppRoutes />
 }
 
 export default App

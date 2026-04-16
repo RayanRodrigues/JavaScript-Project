@@ -3,10 +3,12 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import AppShell from './AppShell'
 
-function renderAppShell(initialPath = '/dashboard') {
+function renderAppShell() {
   return render(
-    <MemoryRouter initialEntries={[initialPath]}>
-      <AppShell />
+    <MemoryRouter>
+      <AppShell>
+        <div data-testid="child-content">Test content</div>
+      </AppShell>
     </MemoryRouter>
   )
 }
@@ -34,10 +36,9 @@ describe('AppShell', () => {
     expect(shell).toHaveClass('dark:bg-slate-950')
   })
 
-  it('renders page content inside main', () => {
-    renderAppShell('/dashboard')
+  it('renders children inside main', () => {
+    renderAppShell()
     const main = screen.getByRole('main')
-    expect(main).toBeInTheDocument()
-    expect(main.children.length).toBeGreaterThan(0)
+    expect(main).toContainElement(screen.getByTestId('child-content'))
   })
 })
