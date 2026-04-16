@@ -1,6 +1,5 @@
 import { getStoredToken } from '../../hooks/useAuth'
-
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+import { buildApiUrl } from '../../lib/api'
 
 export type DashboardDeadline = {
   id: string
@@ -21,7 +20,7 @@ export type DashboardSummary = {
 }
 
 export async function fetchDashboardSummary(): Promise<DashboardSummary> {
-  const res = await fetch(`${API_BASE}/dashboard/summary`, {
+  const res = await fetch(buildApiUrl('/dashboard/summary'), {
     headers: { Authorization: `Bearer ${getStoredToken()}` },
   })
   if (!res.ok) throw new Error('Failed to load dashboard data.')

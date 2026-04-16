@@ -1,6 +1,5 @@
 import { getStoredToken } from '../../hooks/useAuth'
-
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+import { buildApiUrl } from '../../lib/api'
 
 export type ProgressSubject = {
   subject: string
@@ -19,7 +18,7 @@ export type ProgressOverviewResponse = {
 }
 
 export async function fetchProgressOverview(): Promise<ProgressOverviewResponse> {
-  const res = await fetch(`${API_BASE}/progress/summary`, {
+  const res = await fetch(buildApiUrl('/progress/summary'), {
     headers: { Authorization: `Bearer ${getStoredToken()}` },
   })
   if (!res.ok) throw new Error('Failed to load progress data.')

@@ -2,7 +2,11 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import type { FastifyInstance } from 'fastify';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { z, type ZodTypeAny } from 'zod';
+import { z } from 'zod';
+
+type OpenApiSchema = Record<string, unknown> & {
+  $schema?: unknown;
+};
 
 const errorResponseSchema = z.object({
   error: z.object({
@@ -18,12 +22,12 @@ export const notFoundErrorJsonSchema = toOpenApiSchema(errorResponseSchema);
 export const internalErrorJsonSchema = toOpenApiSchema(errorResponseSchema);
 export const bearerAuthSecurity = [{ bearerAuth: [] }];
 
-export function toOpenApiSchema(schema: ZodTypeAny) {
-  const jsonSchema = zodToJsonSchema(schema, {
+export function toOpenApiSchema(schema: unknown) {
+  const jsonSchema = zodToJsonSchema(schema as never, {
     target: 'openApi3',
     $refStrategy: 'none',
     effectStrategy: 'input',
-  });
+  }) as OpenApiSchema;
 
   if ('$schema' in jsonSchema) {
     delete jsonSchema.$schema;

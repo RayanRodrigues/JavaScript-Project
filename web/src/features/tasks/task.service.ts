@@ -1,84 +1,76 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  updateDoc,
-} from 'firebase/firestore'
-import { db } from '../../lib/firebase'
-import type { Task, TaskFormValues } from './task.types'
+import { getStoredToken } from '../../hooks/useAuth'
+import { buildApiUrl } from '../../lib/api'
+import type { Task, TaskFormValues, ListTasksParams } from './task.types'
 
-const TASKS_COLLECTION = 'tasks'
-
-function taskCollection() {
-  return collection(db, TASKS_COLLECTION)
-}
-
-function mapTask(taskId: string, data: Partial<Task>): Task {
+function authHeaders() {
   return {
-    id: taskId,
-    title: data.title ?? '',
-    subject: data.subject ?? '',
-    dueDate: data.dueDate ?? '',
-    notes: data.notes ?? '',
-    priority: data.priority ?? 'Low',
-    completed: data.completed ?? false,
-    createdAt: data.createdAt ?? '',
-    updatedAt: data.updatedAt ?? '',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${getStoredToken()}`,
   }
 }
 
-async function getTask(taskId: string) {
-  const snapshot = await getDoc(doc(db, TASKS_COLLECTION, taskId))
+export async function listTasks(params: ListTasksParams = {}): Promise<Task[]> {
+  const query = new URLSearchParams()
+  if (params.status) query.set('status', params.status)
+  if (params.search) query.set('search', params.search)
+  if (params.priority) query.set('priority', params.priority)
+  if (params.limit !== undefined) query.set('limit', String(params.limit))
 
-  if (!snapshot.exists()) {
-    throw new Error('Task not found.')
-  }
-
-  return mapTask(snapshot.id, snapshot.data() as Partial<Task>)
-}
-
-export async function listTasks() {
-  const snapshot = await getDocs(query(taskCollection(), orderBy('createdAt', 'desc')))
-  return snapshot.docs.map((taskDoc) => mapTask(taskDoc.id, taskDoc.data() as Partial<Task>))
-}
-
-export async function createTask(values: TaskFormValues) {
-  const timestamp = new Date().toISOString()
-  const payload = {
-    ...values,
-    completed: false,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  }
-
-  const taskRef = await addDoc(taskCollection(), payload)
-  return mapTask(taskRef.id, payload)
-}
-
-export async function updateTask(taskId: string, values: TaskFormValues) {
-  const payload = {
-    ...values,
-    updatedAt: new Date().toISOString(),
-  }
-
-  await updateDoc(doc(db, TASKS_COLLECTION, taskId), payload)
-  return getTask(taskId)
-}
-
-export async function toggleTaskCompletion(taskId: string, completed: boolean) {
-  await updateDoc(doc(db, TASKS_COLLECTION, taskId), {
-    completed,
-    updatedAt: new Date().toISOString(),
+  const res = await fetch(`${buildApiUrl('/tasks')}?${query}`, {
+    headers: authHeaders(),
   })
-
-  return getTask(taskId)
+  if (!res.ok) throw new Error('Failed to load tasks.')
+  const data = (await res.json()) as { tasks: Task[] }
+  return data.tasks
 }
 
-export async function removeTask(taskId: string) {
-  await deleteDoc(doc(db, TASKS_COLLECTION, taskId))
+export async function createTask(values: TaskFormValues): Promise<Task> {
+  const res = await fetch(buildApiUrl('/tasks'), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      title: values.title,
+      subject: values.subject || null,
+      dueDate: values.dueDate || null,
+      priority: values.priority || null,
+    }),
+  })
+  if (!res.ok) throw new Error('Failed to create task.')
+  const data = (await res.json()) as { task: Task }
+  return data.task
+}
+
+export async function updateTask(taskId: string, values: TaskFormValues): Promise<Task> {
+  const res = await fetch(buildApiUrl(`/tasks/${taskId}`), {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      title: values.title,
+      subject: values.subject || null,
+      dueDate: values.dueDate || null,
+      priority: values.priority || null,
+    }),
+  })
+  if (!res.ok) throw new Error('Failed to update task.')
+  const data = (await res.json()) as { task: Task }
+  return data.task
+}
+
+export async function toggleTaskCompletion(taskId: string, completed: boolean): Promise<Task> {
+  const res = await fetch(buildApiUrl(`/tasks/${taskId}`), {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({ status: completed ? 'completed' : 'pending' }),
+  })
+  if (!res.ok) throw new Error('Failed to update task status.')
+  const data = (await res.json()) as { task: Task }
+  return data.task
+}
+
+export async function removeTask(taskId: string): Promise<void> {
+  const res = await fetch(buildApiUrl(`/tasks/${taskId}`), {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error('Failed to delete task.')
 }

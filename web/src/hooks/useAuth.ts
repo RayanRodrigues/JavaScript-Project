@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { buildApiUrl } from '../lib/api'
 
 export type User = { userId: string; email: string | null }
 type Session = { idToken: string; refreshToken: string; expiresIn: string }
@@ -6,8 +7,6 @@ type AuthResult = { success: true } | { success: false; error: string }
 
 const USER_KEY = 'auth_user'
 const TOKEN_KEY = 'auth_token'
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
-
 function readUser(): User | null {
   try {
     return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null')
@@ -30,7 +29,7 @@ export function useAuth() {
 
   async function login(email: string, password: string): Promise<AuthResult> {
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(buildApiUrl('/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -50,7 +49,7 @@ export function useAuth() {
 
   async function signup(email: string, password: string): Promise<AuthResult> {
     try {
-      const res = await fetch(`${API_BASE}/auth/register`, {
+      const res = await fetch(buildApiUrl('/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

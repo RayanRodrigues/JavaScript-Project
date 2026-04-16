@@ -53,4 +53,20 @@ describe('app swagger docs', () => {
 
     await app.close();
   });
+
+  it('allows swagger ui assets in non-production CSP', async () => {
+    process.env.NODE_ENV = 'test';
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/docs',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-security-policy']).toContain("script-src 'self' 'unsafe-inline'");
+    expect(response.headers['content-security-policy']).toContain("style-src 'self' 'unsafe-inline'");
+
+    await app.close();
+  });
 });

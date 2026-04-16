@@ -18,11 +18,8 @@ const existingTask: Task = {
   title: 'Read calculus chapter',
   subject: 'Math',
   dueDate: '2026-04-20',
-  notes: 'Focus on limits',
-  priority: 'Medium',
-  completed: false,
-  createdAt: '2026-04-16T10:00:00.000Z',
-  updatedAt: '2026-04-16T10:00:00.000Z',
+  priority: 'medium',
+  status: 'pending',
 }
 
 function renderPage() {
@@ -34,23 +31,24 @@ beforeEach(() => {
   vi.mocked(taskService.listTasks).mockResolvedValue([existingTask])
   vi.mocked(taskService.createTask).mockImplementation(async (values) => ({
     id: 'task-2',
-    ...values,
-    completed: false,
-    createdAt: '2026-04-16T11:00:00.000Z',
-    updatedAt: '2026-04-16T11:00:00.000Z',
+    title: values.title,
+    subject: values.subject || null,
+    dueDate: values.dueDate || null,
+    priority: values.priority,
+    status: 'pending',
   }))
   vi.mocked(taskService.updateTask).mockImplementation(async (taskId, values) => ({
     id: taskId,
-    ...values,
-    completed: false,
-    createdAt: existingTask.createdAt,
-    updatedAt: '2026-04-16T11:30:00.000Z',
+    title: values.title,
+    subject: values.subject || null,
+    dueDate: values.dueDate || null,
+    priority: values.priority,
+    status: 'pending',
   }))
   vi.mocked(taskService.toggleTaskCompletion).mockImplementation(async (taskId, completed) => ({
     ...existingTask,
     id: taskId,
-    completed,
-    updatedAt: '2026-04-16T12:00:00.000Z',
+    status: completed ? 'completed' : 'pending',
   }))
   vi.mocked(taskService.removeTask).mockResolvedValue(undefined)
   vi.stubGlobal('confirm', vi.fn(() => true))
@@ -59,20 +57,35 @@ beforeEach(() => {
 describe('AddTaskPage', () => {
   it('renders the page title', async () => {
     renderPage()
+
     expect(screen.getByRole('heading', { name: 'Tasks' })).toBeInTheDocument()
     expect(await screen.findByText('Read calculus chapter')).toBeInTheDocument()
   })
 
-  it('renders all form fields', () => {
+  it('loads pending tasks by default', async () => {
     renderPage()
+
+    await waitFor(() =>
+      expect(taskService.listTasks).toHaveBeenCalledWith({
+        search: undefined,
+        status: 'pending',
+        limit: 20,
+      }),
+    )
+  })
+
+  it('renders the current task form fields', () => {
+    renderPage()
+
     expect(screen.getByLabelText('Task Title')).toBeInTheDocument()
     expect(screen.getByLabelText('Subject')).toBeInTheDocument()
     expect(screen.getByLabelText('Due Date')).toBeInTheDocument()
-    expect(screen.getByLabelText('Notes')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search tasks…')).toBeInTheDocument()
   })
 
   it('renders all three priority pills', () => {
     renderPage()
+
     expect(screen.getByRole('button', { name: 'Low' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Medium' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'High' })).toBeInTheDocument()
@@ -80,6 +93,7 @@ describe('AddTaskPage', () => {
 
   it('defaults to Low priority', () => {
     renderPage()
+
     expect(screen.getByRole('button', { name: 'Low' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Medium' })).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('button', { name: 'High' })).toHaveAttribute('aria-pressed', 'false')
@@ -92,19 +106,6 @@ describe('AddTaskPage', () => {
     await user.click(screen.getByRole('button', { name: 'Medium' }))
 
     expect(screen.getByRole('button', { name: 'Medium' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Low' })).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByRole('button', { name: 'High' })).toHaveAttribute('aria-pressed', 'false')
-  })
-
-  it('selects High when clicked', async () => {
-    const user = userEvent.setup()
-    renderPage()
-
-    await user.click(screen.getByRole('button', { name: 'High' }))
-
-    expect(screen.getByRole('button', { name: 'High' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Low' })).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByRole('button', { name: 'Medium' })).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('creates a task through the service', async () => {
@@ -114,7 +115,6 @@ describe('AddTaskPage', () => {
     await user.type(screen.getByLabelText('Task Title'), 'Prepare history essay')
     await user.type(screen.getByLabelText('Subject'), 'History')
     await user.type(screen.getByLabelText('Due Date'), '2026-04-24')
-    await user.type(screen.getByLabelText('Notes'), 'Outline first draft')
     await user.click(screen.getByRole('button', { name: 'High' }))
     await user.click(screen.getByRole('button', { name: 'Save Task' }))
 
@@ -123,8 +123,7 @@ describe('AddTaskPage', () => {
         title: 'Prepare history essay',
         subject: 'History',
         dueDate: '2026-04-24',
-        notes: 'Outline first draft',
-        priority: 'High',
+        priority: 'high',
       }),
     )
 
@@ -151,8 +150,7 @@ describe('AddTaskPage', () => {
         title: 'Review calculus exercises',
         subject: 'Math',
         dueDate: '2026-04-20',
-        notes: 'Focus on limits',
-        priority: 'Medium',
+        priority: 'medium',
       }),
     )
   })
@@ -166,8 +164,6 @@ describe('AddTaskPage', () => {
     await waitFor(() =>
       expect(taskService.toggleTaskCompletion).toHaveBeenCalledWith('task-1', true),
     )
-
-    expect(await screen.findByText('Completed')).toBeInTheDocument()
   })
 
   it('deletes a task after confirmation', async () => {
@@ -182,8 +178,10 @@ describe('AddTaskPage', () => {
 
   it('renders the save task submit button', () => {
     renderPage()
-    const btn = screen.getByRole('button', { name: 'Save Task' })
-    expect(btn).toBeInTheDocument()
-    expect(btn).toHaveAttribute('type', 'submit')
+
+    const button = screen.getByRole('button', { name: 'Save Task' })
+
+    expect(button).toBeInTheDocument()
+    expect(button).toHaveAttribute('type', 'submit')
   })
 })

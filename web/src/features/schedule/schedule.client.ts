@@ -1,6 +1,5 @@
 import { getStoredToken } from '../../hooks/useAuth'
-
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+import { buildApiUrl } from '../../lib/api'
 
 export type ScheduleTask = {
   id: string
@@ -22,7 +21,7 @@ export type ScheduleSummaryResponse = {
 }
 
 export async function fetchScheduleSummary(): Promise<ScheduleSummaryResponse> {
-  const res = await fetch(`${API_BASE}/schedule/summary`, {
+  const res = await fetch(buildApiUrl('/schedule/summary'), {
     headers: { Authorization: `Bearer ${getStoredToken()}` },
   })
   if (!res.ok) throw new Error('Failed to load schedule data.')
