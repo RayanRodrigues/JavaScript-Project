@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
+import AlertBanner from '../../components/AlertBanner'
 import PageHeader from '../../components/PageHeader'
 import TaskCard from './TaskCard'
 import {
@@ -308,17 +309,8 @@ function AddTaskPage() {
               ) : null}
             </div>
 
-            {feedbackMessage ? (
-              <p className="m-0 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                {feedbackMessage}
-              </p>
-            ) : null}
-
-            {errorMessage ? (
-              <p className="m-0 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
-                {errorMessage}
-              </p>
-            ) : null}
+            {feedbackMessage ? <AlertBanner variant="success" message={feedbackMessage} /> : null}
+            {errorMessage ? <AlertBanner variant="error" message={errorMessage} /> : null}
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="title" className={LABEL_CLASS}>Task Title</label>

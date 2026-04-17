@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AlertBanner from '../../components/AlertBanner'
 import PageHeader from '../../components/PageHeader'
 import ProgressMeter from '../../components/ProgressMeter'
 import SummaryList from '../../components/SummaryList'
@@ -91,11 +92,7 @@ function DashboardPage() {
         subtitle="Get a quick overview of your study tasks and upcoming deadlines."
       />
 
-      {error ? (
-        <p className="mb-6 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </p>
-      ) : null}
+      {error ? <AlertBanner variant="error" message={error} /> : null}
 
       {/* Stat cards */}
       {loading ? (

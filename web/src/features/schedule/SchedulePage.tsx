@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AlertBanner from '../../components/AlertBanner'
 import PageHeader from '../../components/PageHeader'
 import { fetchScheduleSummary } from './schedule.client'
 import type { ScheduleSummaryResponse, ScheduleTask } from './schedule.client'
@@ -142,11 +143,7 @@ function SchedulePage() {
         subtitle="View your pending and overdue study tasks."
       />
 
-      {error ? (
-        <p className="mb-6 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </p>
-      ) : null}
+      {error ? <AlertBanner variant="error" message={error} /> : null}
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-5 mb-6 max-sm:grid-cols-1">

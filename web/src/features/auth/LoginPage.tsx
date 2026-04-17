@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
+import AlertBanner from '../../components/AlertBanner'
 import { useAuth } from '../../hooks/useAuth'
 
 function LoginPage() {
@@ -51,11 +52,7 @@ function LoginPage() {
           </p>
 
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            {error && (
-              <p role="alert" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
+            {error && <AlertBanner variant="error" message={error} />}
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
