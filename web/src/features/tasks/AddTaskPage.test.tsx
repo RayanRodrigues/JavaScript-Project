@@ -176,6 +176,22 @@ describe('AddTaskPage', () => {
     expect(screen.queryByText('Read calculus chapter')).not.toBeInTheDocument()
   })
 
+  it('clears a stale load error after a later successful reload', async () => {
+    const user = userEvent.setup()
+    vi.mocked(taskService.listTasks)
+      .mockRejectedValueOnce(new Error('load failed'))
+      .mockResolvedValueOnce([existingTask])
+
+    renderPage()
+
+    expect(await screen.findByText('Unable to load tasks right now.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'All' }))
+
+    expect(await screen.findByText('Read calculus chapter')).toBeInTheDocument()
+    expect(screen.queryByText('Unable to load tasks right now.')).not.toBeInTheDocument()
+  })
+
   it('renders the save task submit button', () => {
     renderPage()
 

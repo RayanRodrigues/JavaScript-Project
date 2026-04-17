@@ -98,6 +98,7 @@ function AddTaskPage() {
 
   useEffect(() => {
     setIsLoading(true)
+    setErrorMessage('')
     listTasks({ search: debouncedSearch || undefined, status: statusFilter, limit })
       .then(setTasks)
       .catch(() => setErrorMessage('Unable to load tasks right now.'))
