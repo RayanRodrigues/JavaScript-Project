@@ -92,7 +92,7 @@ function DashboardPage() {
         subtitle="Get a quick overview of your study tasks and upcoming deadlines."
       />
 
-      {error ? <AlertBanner variant="error" message={error} /> : null}
+      {error ? <div className="mb-6"><AlertBanner variant="error" message={error} /></div> : null}
 
       {/* Stat cards */}
       {loading ? (
