@@ -1,12 +1,8 @@
-import { apiFetch, buildApiUrl } from '../../lib/api'
-import { getStoredToken } from '../../lib/session'
+import { apiFetch, buildApiUrl, buildAuthHeaders } from '../../lib/api'
 import type { Task, TaskFormValues, ListTasksParams } from './task.types'
 
 function authHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${getStoredToken()}`,
-  }
+  return buildAuthHeaders({ 'Content-Type': 'application/json' })
 }
 
 export async function listTasks(params: ListTasksParams = {}): Promise<Task[]> {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiFetch, buildApiUrl } from './api'
+import { apiFetch, buildApiUrl, buildAuthHeaders } from './api'
 
 beforeEach(() => {
   localStorage.clear()
@@ -9,6 +9,21 @@ beforeEach(() => {
 describe('api helpers', () => {
   it('builds /api urls without duplicating the prefix', () => {
     expect(buildApiUrl('/tasks')).toBe('http://localhost:3001/api/tasks')
+  })
+
+  it('omits the authorization header when no token is stored', () => {
+    const headers = buildAuthHeaders({ 'Content-Type': 'application/json' })
+
+    expect(headers.get('Content-Type')).toBe('application/json')
+    expect(headers.has('Authorization')).toBe(false)
+  })
+
+  it('adds the authorization header when a token is stored', () => {
+    localStorage.setItem('auth_token', 'valid-token')
+
+    const headers = buildAuthHeaders()
+
+    expect(headers.get('Authorization')).toBe('Bearer valid-token')
   })
 
   it('clears the session and redirects on unauthorized responses', async () => {

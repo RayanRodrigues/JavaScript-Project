@@ -1,4 +1,5 @@
 import { clearStoredSession } from './session'
+import { getStoredToken } from './session'
 import { getApiOrigin } from '../config/env'
 
 type ApiFetchOptions = {
@@ -11,6 +12,17 @@ export function buildApiUrl(path: string): string {
   const apiBase = trimmedOrigin.endsWith('/api') ? trimmedOrigin : `${trimmedOrigin}/api`
 
   return `${apiBase}${normalizedPath}`
+}
+
+export function buildAuthHeaders(headers: HeadersInit = {}): Headers {
+  const normalizedHeaders = new Headers(headers)
+  const token = getStoredToken()
+
+  if (token) {
+    normalizedHeaders.set('Authorization', `Bearer ${token}`)
+  }
+
+  return normalizedHeaders
 }
 
 function redirectToLogin() {
