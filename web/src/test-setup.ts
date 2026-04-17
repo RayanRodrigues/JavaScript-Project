@@ -15,30 +15,26 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 })
 
-const storage = new Map<string, string>()
+if (typeof localStorage.clear !== 'function') {
+  const store = new Map<string, string>()
 
-const localStorageMock: Storage = {
-  get length() {
-    return storage.size
-  },
-  clear() {
-    storage.clear()
-  },
-  getItem(key: string) {
-    return storage.has(key) ? storage.get(key)! : null
-  },
-  key(index: number) {
-    return Array.from(storage.keys())[index] ?? null
-  },
-  removeItem(key: string) {
-    storage.delete(key)
-  },
-  setItem(key: string, value: string) {
-    storage.set(key, value)
-  },
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, String(value))
+      },
+      removeItem: (key: string) => {
+        store.delete(key)
+      },
+      clear: () => {
+        store.clear()
+      },
+      key: (index: number) => Array.from(store.keys())[index] ?? null,
+      get length() {
+        return store.size
+      },
+    },
+  })
 }
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-  writable: true,
-})

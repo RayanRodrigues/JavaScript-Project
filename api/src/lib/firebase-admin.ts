@@ -1,4 +1,5 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 function requireEnv(name: string) {
@@ -11,12 +12,12 @@ function requireEnv(name: string) {
   return value;
 }
 
-function getPrivateKey() {
-  return requireEnv('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n');
-}
-
 function getProjectId() {
   return requireEnv('FIREBASE_PROJECT_ID');
+}
+
+function getPrivateKey() {
+  return requireEnv('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n');
 }
 
 export function getFirebaseAdminApp() {
@@ -33,23 +34,10 @@ export function getFirebaseAdminApp() {
   });
 }
 
-export async function checkFirebaseConnection() {
-  const app = getFirebaseAdminApp();
-  const firestore = getFirestore(app);
-  const healthRef = firestore.collection('system').doc('health');
-  const snapshot = await healthRef.get();
+export function getFirebaseAdminAuth() {
+  return getAuth(getFirebaseAdminApp());
+}
 
-  if (!snapshot.exists) {
-    throw new Error('Firestore health document system/health was not found');
-  }
-
-  const data = snapshot.data();
-
-  return {
-    connected: true,
-    projectId: getProjectId(),
-    source: 'firestore',
-    document: 'system/health',
-    data: data ?? null,
-  };
+export function getFirebaseAdminFirestore() {
+  return getFirestore(getFirebaseAdminApp());
 }

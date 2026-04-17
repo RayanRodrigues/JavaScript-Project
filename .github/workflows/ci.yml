@@ -1,4 +1,4 @@
-name: CI
+name: Code Quality and Tests
 
 on:
   push:
@@ -10,15 +10,14 @@ on:
       - main
       - dev
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  frontend-quality:
-    name: Frontend Lint
+  code-quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      ENV: test
+      VITE_ENV: test
+      VITE_API_URL: http://localhost:3001
 
     steps:
       - name: Checkout repository
@@ -27,43 +26,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
-        run: npm install --include=optional
+        run: npm ci --include=optional
 
-      - name: Lint frontend
+      - name: Lint web
         run: npm run lint --workspace web
 
-  backend-quality:
-    name: Backend Lint and Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm install --include=optional
-
-      - name: Lint backend
+      - name: Lint api
         run: npm run lint --workspace api
 
-      - name: Build backend
+      - name: Build api
         run: npm run build --workspace api
 
-  backend-tests:
-    name: Backend Tests
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      ENV: test
+      VITE_ENV: test
+      VITE_API_URL: http://localhost:3001
 
     steps:
       - name: Checkout repository
@@ -72,32 +56,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
-        run: npm install --include=optional
+        run: npm ci --include=optional
 
-      - name: Run backend tests
-        run: npm run test --workspace api
-
-  frontend-tests:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm install --include=optional
-
-      - name: Run frontend tests
+      - name: Run web tests
         run: npm run test --workspace web
+
+      - name: Run api tests
+        run: npm run test --workspace api

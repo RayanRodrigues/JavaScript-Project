@@ -2,15 +2,47 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import { registerSystemRoutes } from '../modules/system/system.routes.js';
+import { getAppEnv } from '../config/env.js';
+import { registerSwaggerDocs } from '../lib/swagger.js';
+import { registerAuthRoutes } from '../modules/auth/auth.routes.js';
+import { registerDashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
+import { registerProgressRoutes } from '../modules/progress/progress.routes.js';
+import { registerScheduleRoutes } from '../modules/schedule/schedule.routes.js';
+import { registerTaskRoutes } from '../modules/tasks/tasks.routes.js';
+
+const API_PREFIX = '/api';
+const SWAGGER_CSP_HEADER = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self' https: data:",
+].join('; ');
 
 export async function buildApp() {
+  const appEnv = getAppEnv();
   const app = Fastify({
     logger: { level: 'warn' },
     disableRequestLogging: true,
   });
 
+  app.setValidatorCompiler(() => {
+    return (value) => ({ value });
+  });
+
   await app.register(helmet);
+
+  if (appEnv !== 'production') {
+    app.addHook('onSend', async (request, reply, payload) => {
+      if (!request.url.startsWith('/docs')) {
+        return payload;
+      }
+
+      reply.header('content-security-policy', SWAGGER_CSP_HEADER);
+
+      return payload;
+    });
+  }
 
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
@@ -22,7 +54,32 @@ export async function buildApp() {
     timeWindow: '1 minute',
   });
 
-  await registerSystemRoutes(app);
+  await registerSwaggerDocs(app);
+
+  await app.register(async (api) => {
+    api.get('/health', {
+      schema: {
+        tags: ['System'],
+        summary: 'Check API availability',
+        response: {
+          200: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['status'],
+            properties: {
+              status: { type: 'string', enum: ['ok'] },
+            },
+          },
+        },
+      },
+    }, async () => ({ status: 'ok' }));
+
+    await registerAuthRoutes(api);
+    await registerDashboardRoutes(api);
+    await registerProgressRoutes(api);
+    await registerScheduleRoutes(api);
+    await registerTaskRoutes(api);
+  }, { prefix: API_PREFIX });
 
   return app;
 }
