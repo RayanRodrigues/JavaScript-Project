@@ -19,8 +19,28 @@ const SWAGGER_CSP_HEADER = [
   "font-src 'self' https: data:",
 ].join('; ');
 
+function getAllowedCorsOrigins(appEnv: ReturnType<typeof getAppEnv>) {
+  const configuredOrigins = process.env.CORS_ORIGIN
+    ?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (configuredOrigins && configuredOrigins.length > 0) {
+    return configuredOrigins;
+  }
+
+  if (appEnv === 'production') {
+    throw new Error(
+      'CORS_ORIGIN must be set in production. Use a comma-separated list of allowed frontend origins.',
+    );
+  }
+
+  return ['http://localhost:5173'];
+}
+
 export async function buildApp() {
   const appEnv = getAppEnv();
+  const allowedCorsOrigins = getAllowedCorsOrigins(appEnv);
   const app = Fastify({
     logger: { level: 'warn' },
     disableRequestLogging: true,
@@ -45,7 +65,14 @@ export async function buildApp() {
   }
 
   await app.register(cors, {
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+    origin(origin, callback) {
+      if (!origin || allowedCorsOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error('Origin not allowed by CORS'), false);
+    },
     credentials: true,
   });
 
