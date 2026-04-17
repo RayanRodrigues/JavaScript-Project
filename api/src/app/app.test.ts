@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
 
 const originalEnv = process.env.ENV;
+const originalCorsOrigin = process.env.CORS_ORIGIN;
 
 afterEach(() => {
   process.env.ENV = originalEnv;
+  process.env.CORS_ORIGIN = originalCorsOrigin;
 });
 
 describe('app swagger docs', () => {
@@ -114,5 +116,46 @@ describe('app swagger docs', () => {
     delete process.env.ENV;
 
     await expect(buildApp()).rejects.toThrow('ENV must be set to development, test, or production');
+  });
+
+  it('throws when CORS_ORIGIN is missing in production', async () => {
+    process.env.ENV = 'production';
+    delete process.env.CORS_ORIGIN;
+
+    await expect(buildApp()).rejects.toThrow(
+      'CORS_ORIGIN must be set in production. Use a comma-separated list of allowed frontend origins.',
+    );
+  });
+
+  it('allows configured CORS origins from a comma-separated list', async () => {
+    process.env.ENV = 'production';
+    process.env.CORS_ORIGIN =
+      'https://study-planner-web.onrender.com, https://study-planner-preview.onrender.com';
+
+    const app = await buildApp();
+    const allowedResponse = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/health',
+      headers: {
+        origin: 'https://study-planner-web.onrender.com',
+        'access-control-request-method': 'GET',
+      },
+    });
+    const blockedResponse = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/health',
+      headers: {
+        origin: 'https://evil.example.com',
+        'access-control-request-method': 'GET',
+      },
+    });
+
+    expect(allowedResponse.statusCode).toBe(204);
+    expect(allowedResponse.headers['access-control-allow-origin']).toBe(
+      'https://study-planner-web.onrender.com',
+    );
+    expect(blockedResponse.statusCode).toBe(500);
+
+    await app.close();
   });
 });
