@@ -196,7 +196,7 @@ function AddTaskPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         {/* Task list panel */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+        <div className="order-2 lg:order-1 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between gap-3 mb-4">
             <h3 className="m-0 text-lg font-semibold text-slate-900 dark:text-slate-50">
               Task collection
@@ -289,7 +289,7 @@ function AddTaskPage() {
         </div>
 
         {/* Form panel */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 lg:self-start">
+        <div className="order-1 lg:order-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 lg:self-start">
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-slate-900 dark:text-slate-50">

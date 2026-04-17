@@ -97,9 +97,8 @@ describe('tasks service', () => {
     expect(collection).toHaveBeenCalledWith('tasks');
     expect(where).toHaveBeenCalledWith('userId', '==', 'user-123');
     expect(where).toHaveBeenCalledWith('status', '==', 'pending');
-    expect(orderBy).toHaveBeenCalledWith('dueDate');
-    expect(orderBy).toHaveBeenCalledWith('title');
-    expect(limit).toHaveBeenCalledWith(20);
+    expect(orderBy).not.toHaveBeenCalled();
+    expect(limit).not.toHaveBeenCalled();
   });
 
   it('returns pending tasks by default and sorts by dueDate', async () => {
@@ -201,8 +200,7 @@ describe('tasks service', () => {
 
     expect(where).toHaveBeenCalledWith('userId', '==', 'user-123');
     expect(where).toHaveBeenCalledWith('priority', '==', 'high');
-    expect(orderBy).toHaveBeenCalledWith('dueDate');
-    expect(orderBy).toHaveBeenCalledWith('title');
+    expect(orderBy).not.toHaveBeenCalled();
     expect(limit).not.toHaveBeenCalled();
   });
 

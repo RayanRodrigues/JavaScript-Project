@@ -72,12 +72,6 @@ export async function listTasksForUser(userId: string, query?: Partial<ListTasks
     firestoreQuery = firestoreQuery.where('priority', '==', filters.priority);
   }
 
-  firestoreQuery = firestoreQuery.orderBy('dueDate').orderBy('title');
-
-  if (!normalizedSearch) {
-    firestoreQuery = firestoreQuery.limit(filters.limit);
-  }
-
   const snapshot = await firestoreQuery.get();
   const tasks = snapshot.docs
     .map((doc) => mapTask(doc.id, userId, doc.data()))

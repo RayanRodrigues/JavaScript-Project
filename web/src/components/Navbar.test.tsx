@@ -27,7 +27,8 @@ beforeEach(() => {
 describe('Navbar', () => {
   it('renders brand name and tagline', () => {
     renderNavbar()
-    expect(screen.getByText('Study Planner')).toBeInTheDocument()
+    // Brand name appears twice: once in the desktop layout, once in the mobile layout
+    expect(screen.getAllByText('Study Planner').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Organize your work and stay on track')).toBeInTheDocument()
   })
 
