@@ -62,9 +62,9 @@ function Navbar() {
     return () => document.removeEventListener('keydown', onEscape)
   }, [])
 
-  function handleLogout() {
+  async function handleLogout() {
     setMenuOpen(false)
-    logout()
+    await logout()
     navigate('/login', { replace: true })
   }
 

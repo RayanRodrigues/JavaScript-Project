@@ -87,15 +87,50 @@ describe('useAuth', () => {
     expect(outcome).toEqual({ success: false, error: 'Email is already in use' })
   })
 
-  it('logout clears user and token from state and localStorage', async () => {
+  it('logout revokes the server session and clears local auth state', async () => {
     stubFetchOk({ user: fakeUser, session: fakeSession })
     const { result } = renderHook(() => useAuth())
     await act(async () => {
       await result.current.login('alice@example.com', 'pass123')
     })
-    act(() => {
-      result.current.logout()
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+    }))
+
+    await act(async () => {
+      await result.current.logout()
     })
+
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:3001/api/auth/logout',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.any(Headers),
+      }),
+    )
+
+    const [, init] = vi.mocked(fetch).mock.calls[0]
+    expect((init?.headers as Headers).get('Authorization')).toBe('Bearer tok123')
+    expect(result.current.user).toBeNull()
+    expect(localStorage.getItem('auth_user')).toBeNull()
+    expect(localStorage.getItem('auth_token')).toBeNull()
+  })
+
+  it('logout still clears local auth state when the revoke request fails', async () => {
+    stubFetchOk({ user: fakeUser, session: fakeSession })
+    const { result } = renderHook(() => useAuth())
+    await act(async () => {
+      await result.current.login('alice@example.com', 'pass123')
+    })
+
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
+
+    await act(async () => {
+      await result.current.logout()
+    })
+
     expect(result.current.user).toBeNull()
     expect(localStorage.getItem('auth_user')).toBeNull()
     expect(localStorage.getItem('auth_token')).toBeNull()

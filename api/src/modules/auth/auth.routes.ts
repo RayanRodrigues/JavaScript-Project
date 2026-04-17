@@ -12,10 +12,11 @@ import { ZodError } from 'zod';
 import {
   authCredentialsBodySchema,
   authLoginResponseSchema,
+  authLogoutResponseSchema,
   authMeResponseSchema,
   authRegisterResponseSchema,
 } from './auth.schema.js';
-import { AuthError, loginUser, registerUser } from './auth.service.js';
+import { AuthError, loginUser, logoutUser, registerUser } from './auth.service.js';
 
 export async function registerAuthRoutes(app: FastifyInstance) {
   app.post('/auth/register', {
@@ -98,5 +99,27 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       authenticated: true,
       user: request.user,
     });
+  });
+
+  app.post('/auth/logout', {
+    preHandler: requireAuth,
+    schema: {
+      tags: ['Auth'],
+      summary: 'Revoke the authenticated user session',
+      security: bearerAuthSecurity,
+      response: {
+        200: toOpenApiSchema(authLogoutResponseSchema),
+        401: authErrorJsonSchema,
+        500: internalErrorJsonSchema,
+      },
+    },
+  }, async (request, reply) => {
+    try {
+      return authLogoutResponseSchema.parse(await logoutUser(request.user!.userId));
+    } catch (error) {
+      app.log.error(error);
+
+      return sendError(reply, 500, 'internal_error', 'Internal server error');
+    }
   });
 }

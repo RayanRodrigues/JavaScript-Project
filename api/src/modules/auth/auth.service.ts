@@ -69,12 +69,18 @@ async function createUserProfile(user: AuthenticatedUser) {
 }
 
 export async function verifyAuthToken(token: string): Promise<AuthenticatedUser> {
-  const decodedToken = await getFirebaseAdminAuth().verifyIdToken(token);
+  const decodedToken = await getFirebaseAdminAuth().verifyIdToken(token, true);
 
   return {
     userId: decodedToken.uid,
     email: decodedToken.email ?? null,
   };
+}
+
+export async function logoutUser(userId: string) {
+  await getFirebaseAdminAuth().revokeRefreshTokens(userId);
+
+  return { success: true as const };
 }
 
 export async function registerUser(input: AuthCredentialsBody) {

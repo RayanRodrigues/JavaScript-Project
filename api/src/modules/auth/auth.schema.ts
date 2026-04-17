@@ -16,6 +16,10 @@ export const authMeResponseSchema = z.object({
   user: authenticatedUserSchema,
 });
 
+export const authLogoutResponseSchema = z.object({
+  success: z.literal(true),
+});
+
 export const authCredentialsBodySchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(6).max(128),

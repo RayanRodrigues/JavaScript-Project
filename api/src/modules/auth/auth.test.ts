@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../app/app.js';
-import { loginUser, registerUser, verifyAuthToken } from './auth.service.js';
+import { loginUser, logoutUser, registerUser, verifyAuthToken } from './auth.service.js';
 
 const {
   verifyIdToken,
   createUser,
+  revokeRefreshTokens,
   getAuth,
   getApps,
   initializeApp,
@@ -13,6 +14,7 @@ const {
 } = vi.hoisted(() => ({
   verifyIdToken: vi.fn(),
   createUser: vi.fn(),
+  revokeRefreshTokens: vi.fn(),
   getAuth: vi.fn(),
   getApps: vi.fn(),
   initializeApp: vi.fn(),
@@ -46,6 +48,7 @@ describe('auth service', () => {
     getAuth.mockReturnValue({
       verifyIdToken,
       createUser,
+      revokeRefreshTokens,
     });
     getFirestore.mockReturnValue({
       collection: vi.fn(() => ({
@@ -74,7 +77,7 @@ describe('auth service', () => {
       email: 'student@example.com',
     });
 
-    expect(verifyIdToken).toHaveBeenCalledWith('valid-token');
+    expect(verifyIdToken).toHaveBeenCalledWith('valid-token', true);
   });
 
   it('registers a user and returns a signed-in session', async () => {
@@ -152,6 +155,14 @@ describe('auth service', () => {
       },
     });
   });
+
+  it('revokes refresh tokens on logout', async () => {
+    revokeRefreshTokens.mockResolvedValue(undefined);
+
+    await expect(logoutUser('user-123')).resolves.toEqual({ success: true });
+
+    expect(revokeRefreshTokens).toHaveBeenCalledWith('user-123');
+  });
 });
 
 describe('auth routes', () => {
@@ -166,6 +177,7 @@ describe('auth routes', () => {
     getAuth.mockReturnValue({
       verifyIdToken,
       createUser,
+      revokeRefreshTokens,
     });
     getFirestore.mockReturnValue({
       collection: vi.fn(() => ({
@@ -323,6 +335,47 @@ describe('auth routes', () => {
       headers: {
         authorization: 'Bearer invalid-token',
       },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'unauthorized',
+        message: 'Unauthorized',
+      },
+    });
+
+    await app.close();
+  });
+
+  it('revokes the authenticated user session on logout', async () => {
+    verifyIdToken.mockResolvedValue({
+      uid: 'user-123',
+      email: 'student@example.com',
+    });
+    revokeRefreshTokens.mockResolvedValue(undefined);
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/logout',
+      headers: {
+        authorization: 'Bearer valid-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ success: true });
+    expect(revokeRefreshTokens).toHaveBeenCalledWith('user-123');
+
+    await app.close();
+  });
+
+  it('returns 401 when logout is attempted without a bearer token', async () => {
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/logout',
     });
 
     expect(response.statusCode).toBe(401);

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { apiFetch, buildApiUrl } from '../lib/api'
+import { apiFetch, buildApiUrl, buildAuthHeaders } from '../lib/api'
 import {
   clearStoredSession,
   getStoredToken,
@@ -56,9 +56,22 @@ export function useAuth() {
     }
   }
 
-  function logout(): void {
-    clearStoredSession()
-    setUser(null)
+  async function logout(): Promise<void> {
+    try {
+      const token = getStoredToken()
+
+      if (token) {
+        await apiFetch(buildApiUrl('/auth/logout'), {
+          method: 'POST',
+          headers: buildAuthHeaders(),
+        }, { redirectOnUnauthorized: false })
+      }
+    } catch {
+      // Always clear local auth state even if the revoke request fails.
+    } finally {
+      clearStoredSession()
+      setUser(null)
+    }
   }
 
   return { user, login, signup, logout, getToken: getStoredToken }
