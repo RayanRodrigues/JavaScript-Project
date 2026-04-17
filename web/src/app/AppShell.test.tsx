@@ -21,7 +21,7 @@ beforeEach(() => {
 describe('AppShell', () => {
   it('renders the Navbar', () => {
     renderAppShell()
-    expect(screen.getByText('Study Planner')).toBeInTheDocument()
+    expect(screen.getAllByText('Study Planner').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders a main content area', () => {

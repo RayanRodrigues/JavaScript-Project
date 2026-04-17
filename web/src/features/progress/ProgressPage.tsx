@@ -29,9 +29,9 @@ function ProgressPage() {
         subtitle="Track your completed tasks and monitor how you're doing."
       />
 
-      {error ? <AlertBanner variant="error" message={error} /> : null}
+      {error ? <div className="mb-6"><AlertBanner variant="error" message={error} /></div> : null}
 
-      <div className="grid grid-cols-[2fr_1fr] gap-5 max-sm:grid-cols-1">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5">
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
           <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 mt-0 mb-4">

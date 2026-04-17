@@ -143,10 +143,10 @@ function SchedulePage() {
         subtitle="View your pending and overdue study tasks."
       />
 
-      {error ? <AlertBanner variant="error" message={error} /> : null}
+      {error ? <div className="mb-6"><AlertBanner variant="error" message={error} /></div> : null}
 
       {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-5 mb-6 max-sm:grid-cols-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {STAT_CONFIG.map(({ key, label, cardClass, valueClass, labelClass }) => (
           <div key={key} className={`rounded-2xl p-6 ${cardClass}`}>
             {loading ? (
@@ -166,7 +166,7 @@ function SchedulePage() {
       </div>
 
       {/* Task sections */}
-      <div className="grid grid-cols-[3fr_2fr] gap-5 max-sm:grid-cols-1">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5">
         <TaskSection
           title="Upcoming"
           tasks={data?.upcoming ?? []}

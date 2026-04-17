@@ -96,18 +96,18 @@ function DashboardPage() {
 
       {/* Stat cards */}
       {loading ? (
-        <div className="grid grid-cols-4 gap-5 mb-6 max-sm:grid-cols-1 max-md:grid-cols-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {STAT_CONFIG.map(({ key }) => (
             <div key={key} className="rounded-2xl bg-slate-100 dark:bg-slate-800 h-24 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-5 mb-6 max-sm:grid-cols-1 max-md:grid-cols-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {STAT_CONFIG.map(({ key, label, cardClass, valueClass, labelClass, iconClass, Icon }) => (
-            <div key={label} className={`rounded-2xl p-6 flex items-center gap-4 ${cardClass}`}>
+            <div key={label} className={`rounded-2xl p-4 sm:p-6 flex items-center gap-3 ${cardClass}`}>
               <div className={`shrink-0 ${iconClass}`}><Icon /></div>
               <div>
-                <p className={`text-3xl font-extrabold leading-none m-0 ${valueClass}`}>
+                <p className={`text-2xl sm:text-3xl font-extrabold leading-none m-0 ${valueClass}`}>
                   {data?.summary[key] ?? 0}
                 </p>
                 <p className={`text-xs font-semibold uppercase tracking-wide mt-1 mb-0 ${labelClass}`}>
@@ -120,7 +120,7 @@ function DashboardPage() {
       )}
 
       {/* Content panels */}
-      <div className="grid grid-cols-[2fr_1fr] gap-5 max-sm:grid-cols-1">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5">
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
           <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 mt-0 mb-1">
             Upcoming Deadlines
