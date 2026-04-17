@@ -1,6 +1,7 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { createPrivateKey } from 'node:crypto';
 
 function requireEnv(name: string) {
   const value = process.env[name];
@@ -16,8 +17,38 @@ function getProjectId() {
   return requireEnv('FIREBASE_PROJECT_ID');
 }
 
+export function normalizePrivateKey(value: string) {
+  let normalized = value.trim();
+
+  if (
+    (normalized.startsWith('"') && normalized.endsWith('"')) ||
+    (normalized.startsWith("'") && normalized.endsWith("'"))
+  ) {
+    try {
+      normalized = JSON.parse(normalized);
+    } catch {
+      normalized = normalized.slice(1, -1);
+    }
+  }
+
+  return normalized.replace(/\\n/g, '\n').replace(/\r\n?/g, '\n');
+}
+
+export function validatePrivateKey(privateKey: string) {
+  try {
+    createPrivateKey({ key: privateKey, format: 'pem' });
+  } catch {
+    throw new Error(
+      'Invalid FIREBASE_PRIVATE_KEY: expected a valid PEM private key. On Render, store the Firebase private key value with escaped newlines or wrapped quotes.',
+    );
+  }
+}
+
 function getPrivateKey() {
-  return requireEnv('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n');
+  const privateKey = normalizePrivateKey(requireEnv('FIREBASE_PRIVATE_KEY'));
+  validatePrivateKey(privateKey);
+
+  return privateKey;
 }
 
 export function getFirebaseAdminApp() {
