@@ -84,12 +84,18 @@ export async function registerSwaggerDocs(app: FastifyInstance) {
     routePrefix: '/docs',
   });
 
+  const cachedAssets = new Map<string, Buffer>();
+  await Promise.all(
+    Object.keys(swaggerAssetTypes).map(async (filename) => {
+      cachedAssets.set(filename, await readFile(path.join(swaggerStaticDir, filename)));
+    }),
+  );
+
   for (const [filename, contentType] of Object.entries(swaggerAssetTypes)) {
+    const asset = cachedAssets.get(filename)!;
     app.get(`/docs/static/${filename}`, {
       schema: { hide: true },
-    }, async (_request, reply) => {
-      const asset = await readFile(path.join(swaggerStaticDir, filename));
-
+    }, (_request, reply) => {
       return reply.type(contentType).send(asset);
     });
   }
