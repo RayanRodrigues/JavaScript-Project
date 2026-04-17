@@ -38,6 +38,17 @@ vi.mock('firebase-admin/firestore', () => ({
   getFirestore,
 }));
 
+function createTasksQueryMock(docs: Array<{ id: string; data: () => Record<string, unknown> }>) {
+  const get = vi.fn().mockResolvedValue({ docs });
+  const limit = vi.fn(() => query);
+  const orderBy = vi.fn(() => query);
+  const where = vi.fn(() => query);
+  const query = { where, orderBy, limit, get };
+  const collection = vi.fn(() => query);
+
+  return { collection, where, orderBy, limit, get };
+}
+
 describe('tasks service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,22 +65,18 @@ describe('tasks service', () => {
   });
 
   it('lists only the authenticated user tasks from Firestore', async () => {
-    const get = vi.fn().mockResolvedValue({
-      docs: [
-        {
-          id: 'task-1',
-          data: () => ({
-            title: 'Math Quiz Review',
-            subject: 'Math',
-            dueDate: '2026-04-18',
-            priority: 'high',
-            status: 'pending',
-          }),
-        },
-      ],
-    });
-    const where = vi.fn(() => ({ get }));
-    const collection = vi.fn(() => ({ where }));
+    const { collection, where, orderBy, limit } = createTasksQueryMock([
+      {
+        id: 'task-1',
+        data: () => ({
+          title: 'Math Quiz Review',
+          subject: 'Math',
+          dueDate: '2026-04-18',
+          priority: 'high',
+          status: 'pending',
+        }),
+      },
+    ]);
 
     getFirestore.mockReturnValue({ collection });
 
@@ -89,45 +96,35 @@ describe('tasks service', () => {
 
     expect(collection).toHaveBeenCalledWith('tasks');
     expect(where).toHaveBeenCalledWith('userId', '==', 'user-123');
+    expect(where).toHaveBeenCalledWith('status', '==', 'pending');
+    expect(orderBy).toHaveBeenCalledWith('dueDate');
+    expect(orderBy).toHaveBeenCalledWith('title');
+    expect(limit).toHaveBeenCalledWith(20);
   });
 
   it('returns pending tasks by default and sorts by dueDate', async () => {
-    const get = vi.fn().mockResolvedValue({
-      docs: [
-        {
-          id: 'task-1',
-          data: () => ({
-            title: 'Later Task',
-            subject: 'Math',
-            dueDate: '2026-04-20',
-            priority: 'high',
-            status: 'pending',
-          }),
-        },
-        {
-          id: 'task-2',
-          data: () => ({
-            title: 'Completed Task',
-            subject: 'Math',
-            dueDate: '2026-04-18',
-            priority: 'medium',
-            status: 'completed',
-          }),
-        },
-        {
-          id: 'task-3',
-          data: () => ({
-            title: 'Earlier Task',
-            subject: 'History',
-            dueDate: '2026-04-17',
-            priority: 'low',
-            status: 'pending',
-          }),
-        },
-      ],
-    });
-    const where = vi.fn(() => ({ get }));
-    const collection = vi.fn(() => ({ where }));
+    const { collection } = createTasksQueryMock([
+      {
+        id: 'task-1',
+        data: () => ({
+          title: 'Later Task',
+          subject: 'Math',
+          dueDate: '2026-04-20',
+          priority: 'high',
+          status: 'pending',
+        }),
+      },
+      {
+        id: 'task-3',
+        data: () => ({
+          title: 'Earlier Task',
+          subject: 'History',
+          dueDate: '2026-04-17',
+          priority: 'low',
+          status: 'pending',
+        }),
+      },
+    ]);
 
     getFirestore.mockReturnValue({ collection });
 
@@ -156,42 +153,28 @@ describe('tasks service', () => {
   });
 
   it('filters tasks by status, priority, search and limit', async () => {
-    const get = vi.fn().mockResolvedValue({
-      docs: [
-        {
-          id: 'task-1',
-          data: () => ({
-            title: 'Math Quiz Review',
-            subject: 'Math',
-            dueDate: '2026-04-18',
-            priority: 'high',
-            status: 'pending',
-          }),
-        },
-        {
-          id: 'task-2',
-          data: () => ({
-            title: 'Biology Flashcards',
-            subject: 'Biology',
-            dueDate: '2026-04-17',
-            priority: 'high',
-            status: 'pending',
-          }),
-        },
-        {
-          id: 'task-3',
-          data: () => ({
-            title: 'History Essay',
-            subject: 'History',
-            dueDate: '2026-04-19',
-            priority: 'medium',
-            status: 'completed',
-          }),
-        },
-      ],
-    });
-    const where = vi.fn(() => ({ get }));
-    const collection = vi.fn(() => ({ where }));
+    const { collection, where, orderBy, limit } = createTasksQueryMock([
+      {
+        id: 'task-1',
+        data: () => ({
+          title: 'Math Quiz Review',
+          subject: 'Math',
+          dueDate: '2026-04-18',
+          priority: 'high',
+          status: 'pending',
+        }),
+      },
+      {
+        id: 'task-2',
+        data: () => ({
+          title: 'Biology Flashcards',
+          subject: 'Biology',
+          dueDate: '2026-04-17',
+          priority: 'high',
+          status: 'pending',
+        }),
+      },
+    ]);
 
     getFirestore.mockReturnValue({ collection });
 
@@ -215,6 +198,12 @@ describe('tasks service', () => {
         },
       ],
     });
+
+    expect(where).toHaveBeenCalledWith('userId', '==', 'user-123');
+    expect(where).toHaveBeenCalledWith('priority', '==', 'high');
+    expect(orderBy).toHaveBeenCalledWith('dueDate');
+    expect(orderBy).toHaveBeenCalledWith('title');
+    expect(limit).not.toHaveBeenCalled();
   });
 
   it('creates a task using the authenticated user as source of truth', async () => {
@@ -316,22 +305,18 @@ describe('tasks routes', () => {
   });
 
   it('returns tasks for an authenticated user', async () => {
-    const get = vi.fn().mockResolvedValue({
-      docs: [
-        {
-          id: 'task-1',
-          data: () => ({
-            title: 'Math Quiz Review',
-            subject: 'Math',
-            dueDate: '2026-04-18',
-            priority: 'high',
-            status: 'pending',
-          }),
-        },
-      ],
-    });
-    const where = vi.fn(() => ({ get }));
-    const collection = vi.fn(() => ({ where }));
+    const { collection } = createTasksQueryMock([
+      {
+        id: 'task-1',
+        data: () => ({
+          title: 'Math Quiz Review',
+          subject: 'Math',
+          dueDate: '2026-04-18',
+          priority: 'high',
+          status: 'pending',
+        }),
+      },
+    ]);
 
     verifyIdToken.mockResolvedValue({
       uid: 'user-123',
@@ -367,32 +352,18 @@ describe('tasks routes', () => {
   });
 
   it('returns pending tasks by default from the route', async () => {
-    const get = vi.fn().mockResolvedValue({
-      docs: [
-        {
-          id: 'task-1',
-          data: () => ({
-            title: 'Pending Task',
-            subject: 'Math',
-            dueDate: '2026-04-18',
-            priority: 'high',
-            status: 'pending',
-          }),
-        },
-        {
-          id: 'task-2',
-          data: () => ({
-            title: 'Completed Task',
-            subject: 'Math',
-            dueDate: '2026-04-17',
-            priority: 'medium',
-            status: 'completed',
-          }),
-        },
-      ],
-    });
-    const where = vi.fn(() => ({ get }));
-    const collection = vi.fn(() => ({ where }));
+    const { collection } = createTasksQueryMock([
+      {
+        id: 'task-1',
+        data: () => ({
+          title: 'Pending Task',
+          subject: 'Math',
+          dueDate: '2026-04-18',
+          priority: 'high',
+          status: 'pending',
+        }),
+      },
+    ]);
 
     verifyIdToken.mockResolvedValue({
       uid: 'user-123',
@@ -428,32 +399,28 @@ describe('tasks routes', () => {
   });
 
   it('filters tasks through query params', async () => {
-    const get = vi.fn().mockResolvedValue({
-      docs: [
-        {
-          id: 'task-1',
-          data: () => ({
-            title: 'Math Quiz Review',
-            subject: 'Math',
-            dueDate: '2026-04-18',
-            priority: 'high',
-            status: 'pending',
-          }),
-        },
-        {
-          id: 'task-2',
-          data: () => ({
-            title: 'Biology Flashcards',
-            subject: 'Biology',
-            dueDate: '2026-04-17',
-            priority: 'high',
-            status: 'pending',
-          }),
-        },
-      ],
-    });
-    const where = vi.fn(() => ({ get }));
-    const collection = vi.fn(() => ({ where }));
+    const { collection } = createTasksQueryMock([
+      {
+        id: 'task-1',
+        data: () => ({
+          title: 'Math Quiz Review',
+          subject: 'Math',
+          dueDate: '2026-04-18',
+          priority: 'high',
+          status: 'pending',
+        }),
+      },
+      {
+        id: 'task-2',
+        data: () => ({
+          title: 'Biology Flashcards',
+          subject: 'Biology',
+          dueDate: '2026-04-17',
+          priority: 'high',
+          status: 'pending',
+        }),
+      },
+    ]);
 
     verifyIdToken.mockResolvedValue({
       uid: 'user-123',

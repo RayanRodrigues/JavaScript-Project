@@ -60,24 +60,28 @@ function mapTask(docId: string, userId: string, data: Record<string, unknown>): 
 }
 
 export async function listTasksForUser(userId: string, query?: Partial<ListTasksQuery>) {
-  const snapshot = await getFirebaseAdminFirestore()
-    .collection('tasks')
-    .where('userId', '==', userId)
-    .get();
-
   const filters = listTasksQuerySchema.parse(query ?? {});
   const normalizedSearch = filters.search?.toLowerCase();
+  let firestoreQuery = getFirebaseAdminFirestore().collection('tasks').where('userId', '==', userId);
+
+  if (filters.status !== 'all') {
+    firestoreQuery = firestoreQuery.where('status', '==', filters.status);
+  }
+
+  if (filters.priority) {
+    firestoreQuery = firestoreQuery.where('priority', '==', filters.priority);
+  }
+
+  firestoreQuery = firestoreQuery.orderBy('dueDate').orderBy('title');
+
+  if (!normalizedSearch) {
+    firestoreQuery = firestoreQuery.limit(filters.limit);
+  }
+
+  const snapshot = await firestoreQuery.get();
   const tasks = snapshot.docs
     .map((doc) => mapTask(doc.id, userId, doc.data()))
     .filter((task) => {
-      if (filters.status !== 'all' && task.status !== filters.status) {
-        return false;
-      }
-
-      if (filters.priority && task.priority !== filters.priority) {
-        return false;
-      }
-
       if (!normalizedSearch) {
         return true;
       }
