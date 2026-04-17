@@ -154,7 +154,31 @@ describe('app swagger docs', () => {
     expect(allowedResponse.headers['access-control-allow-origin']).toBe(
       'https://study-planner-web.onrender.com',
     );
+    expect(allowedResponse.headers['access-control-allow-methods']).toContain('PATCH');
     expect(blockedResponse.statusCode).toBe(500);
+
+    await app.close();
+  });
+
+  it('allows PATCH preflight requests from configured origins', async () => {
+    process.env.ENV = 'production';
+    process.env.CORS_ORIGIN = 'https://java-script-project-web.vercel.app';
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/tasks/task-123',
+      headers: {
+        origin: 'https://java-script-project-web.vercel.app',
+        'access-control-request-method': 'PATCH',
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe(
+      'https://java-script-project-web.vercel.app',
+    );
+    expect(response.headers['access-control-allow-methods']).toContain('PATCH');
 
     await app.close();
   });

@@ -18,6 +18,7 @@ const SWAGGER_CSP_HEADER = [
   "img-src 'self' data:",
   "font-src 'self' https: data:",
 ].join('; ');
+const CORS_METHODS = ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'];
 
 function getAllowedCorsOrigins(appEnv: ReturnType<typeof getAppEnv>) {
   const configuredOrigins = process.env.CORS_ORIGIN
@@ -73,6 +74,7 @@ export async function buildApp() {
 
       callback(new Error('Origin not allowed by CORS'), false);
     },
+    methods: CORS_METHODS,
     credentials: true,
   });
 
