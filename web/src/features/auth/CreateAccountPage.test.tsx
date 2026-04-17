@@ -74,13 +74,13 @@ describe('CreateAccountPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Password must be at least 6 characters.')
   })
 
-  it('shows the server error message on duplicate email', async () => {
-    stubFetchFail({ message: 'Email is already in use' })
+  it('shows the generic auth error for duplicate email attempts', async () => {
+    stubFetchFail({ message: 'Invalid email or password' })
     renderPage()
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'existing@example.com' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'pass123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Email is already in use')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password')
   })
 
   it('shows a loading state while the request is in flight', async () => {

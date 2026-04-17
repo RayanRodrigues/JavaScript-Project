@@ -108,7 +108,7 @@ export async function registerUser(input: AuthCredentialsBody) {
       'code' in error &&
       error.code === 'auth/email-already-exists'
     ) {
-      throw new AuthError('Email is already in use', 409);
+      throw new AuthError('Invalid email or password', 401);
     }
 
     throw error;

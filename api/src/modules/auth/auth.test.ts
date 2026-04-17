@@ -389,7 +389,7 @@ describe('auth routes', () => {
     await app.close();
   });
 
-  it('returns 409 when trying to register an existing email', async () => {
+  it('returns the same auth failure response when registering an existing email', async () => {
     createUser.mockRejectedValue({
       code: 'auth/email-already-exists',
     });
@@ -404,11 +404,11 @@ describe('auth routes', () => {
       },
     });
 
-    expect(response.statusCode).toBe(409);
+    expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
       error: {
         code: 'auth_error',
-        message: 'Email is already in use',
+        message: 'Invalid email or password',
       },
     });
 

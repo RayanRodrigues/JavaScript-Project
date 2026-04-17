@@ -77,14 +77,14 @@ describe('useAuth', () => {
     expect(localStorage.getItem('auth_token')).toBe('tok123')
   })
 
-  it('signup returns error on duplicate email', async () => {
-    stubFetchFail({ message: 'Email is already in use' })
+  it('signup returns the same generic auth error used for invalid credentials', async () => {
+    stubFetchFail({ message: 'Invalid email or password' })
     const { result } = renderHook(() => useAuth())
     let outcome!: Awaited<ReturnType<typeof result.current.signup>>
     await act(async () => {
       outcome = await result.current.signup('alice@example.com', 'pass123')
     })
-    expect(outcome).toEqual({ success: false, error: 'Email is already in use' })
+    expect(outcome).toEqual({ success: false, error: 'Invalid email or password' })
   })
 
   it('logout revokes the server session and clears local auth state', async () => {
