@@ -71,6 +71,24 @@ describe('app swagger docs', () => {
     await app.close();
   });
 
+  it('keeps helmet defaults on non-doc routes outside production', async () => {
+    process.env.ENV = 'test';
+
+    const app = await buildApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/health',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-security-policy']).toContain("default-src 'self'");
+    expect(response.headers['content-security-policy']).toContain('upgrade-insecure-requests');
+    expect(response.headers['cross-origin-opener-policy']).toBe('same-origin');
+    expect(response.headers['origin-agent-cluster']).toBe('?1');
+
+    await app.close();
+  });
+
   it('serves swagger ui static assets', async () => {
     process.env.ENV = 'test';
 

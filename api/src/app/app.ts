@@ -11,20 +11,13 @@ import { registerScheduleRoutes } from '../modules/schedule/schedule.routes.js';
 import { registerTaskRoutes } from '../modules/tasks/tasks.routes.js';
 
 const API_PREFIX = '/api';
-const SWAGGER_CSP_OPTIONS = {
-  contentSecurityPolicy: {
-    useDefaults: false,
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:'],
-      fontSrc: ["'self'", 'https:', 'data:'],
-    },
-  },
-  crossOriginOpenerPolicy: false,
-  originAgentCluster: false,
-};
+const SWAGGER_CSP_HEADER = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self' https: data:",
+].join('; ');
 
 export async function buildApp() {
   const appEnv = getAppEnv();
@@ -37,7 +30,19 @@ export async function buildApp() {
     return (value) => ({ value });
   });
 
-  await app.register(helmet, appEnv === 'production' ? {} : SWAGGER_CSP_OPTIONS);
+  await app.register(helmet);
+
+  if (appEnv !== 'production') {
+    app.addHook('onSend', async (request, reply, payload) => {
+      if (!request.url.startsWith('/docs')) {
+        return payload;
+      }
+
+      reply.header('content-security-policy', SWAGGER_CSP_HEADER);
+
+      return payload;
+    });
+  }
 
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
