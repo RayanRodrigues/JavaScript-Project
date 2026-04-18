@@ -1,16 +1,56 @@
 name: Keep Render Alive
 
+permissions:
+  actions: write
+
 on:
   schedule:
-    - cron: '*/14 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    env:
+      KEEP_ALIVE_UNTIL: '2026-05-01'
     steps:
+      - name: Check expiration date
+        id: expiry
+        run: |
+          today="$(date -u +%F)"
+
+          if [[ "$today" < "$KEEP_ALIVE_UNTIL" ]]; then
+            echo "expired=false" >> "$GITHUB_OUTPUT"
+            echo "Keep-alive is active until $KEEP_ALIVE_UNTIL."
+            exit 0
+          fi
+
+          echo "expired=true" >> "$GITHUB_OUTPUT"
+          echo "Keep-alive expired on $KEEP_ALIVE_UNTIL."
+
+      - name: Disable workflow after expiration
+        if: steps.expiry.outputs.expired == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl --fail --silent --show-error \
+            --request PUT \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/keep-alive.yml/disable"
+
+          echo "Workflow disabled."
+      
+      - name: Stop after expiration
+        if: steps.expiry.outputs.expired == 'true'
+        run: |
+          echo "Skipping ping because keep-alive has expired."
+          exit 0
+
       - name: Ping health endpoint
+        if: steps.expiry.outputs.expired != 'true'
         run: |
           curl --fail --silent --show-error --max-time 30 "${{ secrets.RENDER_HEALTH_URL }}"
           echo "Ping successful"
